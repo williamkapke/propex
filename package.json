@@ -1,0 +1,22 @@
+{
+	"name": "propex",
+	"version": "0.1.2",
+	"description": "Propex parses string expressions that provide taversal information about an object",
+	"keywords": ["propex", "property expressions"],
+	"homepage": "http://github.com/williamwicks/propex",
+	"repository": {
+		"type": "git",
+		"url": "git@github.com:williamwicks/propex.git"
+	},
+	"author"  : {
+		"name"  : "William Wicks",
+		"email" : "wjwicks@gmail.com"
+	},
+	"devDependencies": {
+	},
+	"main": "index",
+	"engines": {
+		"node": "*"
+	},
+	"licenses": [{"type": "MIT", "url": "http://www.opensource.org/licenses/MIT"}]
+}
