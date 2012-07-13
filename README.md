@@ -74,6 +74,7 @@ It is ment to look JSON-like:
 - Arrays use []
 
 We borrow from python a bit to indicate Array ranges: 5:7
+
 We borrow the '?' concept from regular expressions to indicate an item is optional.
 
 ### Objects
@@ -112,7 +113,7 @@ Arrays use the [] syntax and can be followed with "min:max?"
 Ok, without nesting- all of this is really really lame. Nesting is the entire reason for all of this.
 
 ```javascript
-"{name,primaryLocation,locations[{address,position,departments[{name,hours,phone$0},0{name,hours?,phone?}$1],website,storeid}$1]}$2"
+"{name,locations[{address,position,departments[{name,hours,phone$0},0{name,hours?,phone?}$1],website,storeid}$1]$42}"
 ```
 
 
