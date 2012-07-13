@@ -5,27 +5,27 @@ Sound vague? That's intentional. Its like describing what a regular expresson do
 A Propex object provides an Abstract Syntax Tree (AST) of the expression parsed from the string. What you choose to do with that AST is limitless.
 
 # Technical definition
->PROPERTYGROUP | ARRAYGROUP
->PROPERTYGROUP	::= '{' + PROPERTIES? MARKER? + '}'
->ARRAYGROUP		::= '[' + (PROPERTYGROUP | INDEXITEMS | PROPERTYGROUP(',' + INDEXITEMS))? MARKER? + ']' QUANTITY?
->PROPERTIES		::= PROPERTY(',' + PROPERTY)*
->INDEXITEMS		::= INDEXITEM(',' + INDEXITEM)*
->PROPERTY		::= NAME (ARRAYGROUP | PROPERTYGROUP)? OPTIONAL?
->INDEXITEM		::= NUMBER (ARRAYGROUP | PROPERTYGROUP)? OPTIONAL?
->QUANTITY		::= NUMBER | MIN + ':' | ':' + MAX | MIN + ':' + MAX
->MARKER			::= '$' + NUMBER
->OPTIONAL		::= '?'
->MIN				::= NUMBER
->MAX				::= NUMBER
->NUMBER			::= [0-9]+
->
->Example ranges and their meanings:
->PPP,						min=0 max=		Required
->PPP?						min=0 max=		Optional
->PPP{PPP}?					min=0 max=		Required
->PPP[PPP]?					min=0 max=		Optional
->PPP[PPP]5?					min=5 max=5		Optional
->PPP[PPP]1:5?				min=1 max=5		Optional
+	PROPERTYGROUP | ARRAYGROUP
+	PROPERTYGROUP	::= '{' + PROPERTIES? MARKER? + '}'
+	ARRAYGROUP		::= '[' + (PROPERTYGROUP | INDEXITEMS | PROPERTYGROUP(',' + INDEXITEMS))? MARKER? + ']' QUANTITY?
+	PROPERTIES		::= PROPERTY(',' + PROPERTY)*
+	INDEXITEMS		::= INDEXITEM(',' + INDEXITEM)*
+	PROPERTY		::= NAME (ARRAYGROUP | PROPERTYGROUP)? OPTIONAL?
+	INDEXITEM		::= NUMBER (ARRAYGROUP | PROPERTYGROUP)? OPTIONAL?
+	QUANTITY		::= NUMBER | MIN + ':' | ':' + MAX | MIN + ':' + MAX
+	MARKER			::= '$' + NUMBER
+	OPTIONAL		::= '?'
+	MIN				::= NUMBER
+	MAX				::= NUMBER
+	NUMBER			::= [0-9]+
+	
+	Example ranges and their meanings:
+	PPP,						min=0 max=		Required
+	PPP?						min=0 max=		Optional
+	PPP{PPP}?					min=0 max=		Required
+	PPP[PPP]?					min=0 max=		Optional
+	PPP[PPP]5?					min=5 max=5		Optional
+	PPP[PPP]1:5?				min=1 max=5		Optional
 
 
 ...simple right?
@@ -77,8 +77,44 @@ We borrow from python a bit to indicate Array ranges: 5:7
 We borrow the '?' concept from regular expressions to indicate an item is optional.
 
 ### Objects
+```javascript
+//an object that must have a username and password. But optionally dob and height.
+"{username,password,dob?,height?}"
+```
 
 ### Arrays
+Arrays use the [] syntax and can be followed with "min:max?"
+
+```javascript
+//an array is required
+"[]"
+//no different than above
+"[{}]"
+
+
+//an array that should have up-to 15 items in it
+"[]0:15"
+
+//an array that should exactly 3 items in it
+"[]3"
+
+//an array that should exactly 3 items in it *if it exists at all*
+"[]3?"
+
+//an array that should have objects with and 'id' property 
+"[{id}]"
+
+//same as above- but item[4] must have a url for some strange reason.
+"[{id},4{id,url}]"
+```
+
+### Nesting
+Ok, without nesting- all of this is really really lame. Nesting is the entire reason for all of this.
+
+```javascript
+"{name,primaryLocation,locations[{address,position,departments[{name,hours,phone$0},0{name,hours?,phone?}$1],website,storeid}$1]}$2"
+```
+
 
 ### Markers
 Markers take the form of $number. They simply mark an object or sub object- the meaning of which is completely implementation specific.
@@ -108,7 +144,7 @@ Markers allowed me to signal the serializer to call a callback and transform the
 ## License
 
 The MIT License (MIT)
-Copyright (c) 2012 Mark Cavage
+Copyright (c) 2012 William Wicks
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
