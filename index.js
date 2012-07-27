@@ -16,10 +16,94 @@ function Propex(value) {
 Propex.prototype = {
 	toString: function(){
 		return this.source;
+	},
+	copy: function(source){
+		var result;
+//		var depth = 0;
+		this.recurse(source, {
+			found: function(property, name, value, context){
+//				console.log("found",tabs.substr(0, depth), name, value, property.name);
+				context[name] = value;
+			},
+			objectStart: function(property, name, item, context){
+//				console.log("start",tabs.substr(0, depth++), name);
+				var newObj = Array.isArray(item)? [] : {};
+
+				if(!context)
+					result = newObj;
+				else context[name] = newObj;
+
+				return newObj;
+			}
+//			,objectEnd: function(property, name, item, context){
+//				console.log("end",tabs.substr(0, --depth), name);
+//			}
+		});
+		return result;
+	},
+	recurse: function(obj, events, context){
+		var property = { name:null, isOptional:false, subproperties:this };
+		examine(null, obj, property, events, context);
+	}
+};
+function examine(key, item,  property, events, context){
+	var subs = property.subproperties;
+	if(item == undefined || (subs && typeMismatch(subs.isArray, item))) {
+		if(!property.isOptional && events.missing)
+			events.missing(property, key, context);
+		return;
+	}
+
+	if(subs) {
+		var subContext = context;
+		if(events.objectStart)
+			subContext = events.objectStart(property, key, item, context);
+		if(subs.isArray)
+			examineArray(item, subs, events, subContext);
+		else {
+			examineObject(item, subs, events, subContext);
+		}
+
+		if(subs.marker && events.marker){
+			events.marker(property, key, item, subContext);
+		}
+		if(events.objectEnd)
+			events.objectEnd(property, key, item, context);
+	}
+	else {
+		if(events.found) events.found(property, key, item, context);
 	}
 }
-module.exports = Propex;
+function examineObject(obj, propex, events, context){
+	var pxi = propex.items;
+	var keys = Object.keys(pxi);
+	for(var i=0;i<keys.length;i++){
+		var key = keys[i];
+		examine(key, obj[key], pxi[key], events, context);
+	}
+};
+function examineArray(array, propex, events, context){
+	var defaultProperty = propex.items["-1"],
+		pxItems = propex.items,
+		property,
+		i;
 
+	for(i=0;i<array.length;i++){
+		if(i > propex.max){
+			break;
+		}
+		property = pxItems[i] || defaultProperty;
+		if (property == null)
+			throw new Error("No Property specifed for item[" + i + "] and no default is specified.");
+
+		examine(i, array[i], property, events, context);
+	}
+}
+
+function typeMismatch(isArray, data){
+	var dataIsArray = Array.isArray(data);
+	return (isArray && !dataIsArray) || (!isArray && dataIsArray)
+}
 //holds info about each property
 function Property(name, isOptional, subproperties){
 	this.name = name;
@@ -256,3 +340,5 @@ function ParseError(ctx, message){
 	this.message = message+"\nposition: "+ctx.position+"\ncharacter: '"+ctx.current+"'\n";
 }
 ParseError.prototype = Error.prototype;
+
+module.exports = Propex;

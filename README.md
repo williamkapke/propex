@@ -116,6 +116,94 @@ Ok, without nesting- all of this is really really lame. Nesting is the entire re
 "{name,locations[{address,position,departments[{name,hours,phone$0},0{name,hours?,phone?}$1],website,storeid}$1]$42}"
 ```
 
+### Lets be picky
+The simplest of utilities comes along with propex: A "picky" copy utility.
+
+By using a propex to copy another object, you can choose which properties you want to be copied to the new object.
+
+```javascript
+var P = require("propex");
+var test = {foo:8, bar: false, baz:{ dog:"bark", cat:[{type:"lion",sound:"rawr"},{type:"house",sound:"meow"}]}};
+
+var propex = P("{baz}");
+var result = propex.copy(test);
+console.log(JSON.stringify(result));
+//{"baz":{"dog":"bark","cat":[{"type":"lion","sound":"rawr"},{"type":"house","sound":"meow"}]}}
+
+var propex = P("{baz{}}");
+var result = propex.copy(test);
+console.log(JSON.stringify(result));
+//{"baz":{}}
+
+var propex = P("{baz{dog}}");
+var result = propex.copy(test);
+console.log(JSON.stringify(result));
+//{"baz":{"dog":"bark"}}
+
+var propex = P("{baz{cat[{}]}}");
+var result = propex.copy(test);
+console.log(JSON.stringify(result));
+//{"baz":{"cat":[{},{}]}}
+
+var propex = P("{baz{cat[{sound}]}}");
+var result = propex.copy(test);
+console.log(JSON.stringify(result));
+//{"baz":{"cat":[{"sound":"rawr"},{"sound":"meow"}]}}
+```
+
+### Examining objects
+A [propex](http://williamwicks.github.com/propex) object has a `recurse(obj, events)` function that allows you to examine an object as it is applied to the [propex](http://williamwicks.github.com/propex).
+
+Although the `recurse(obj, events)` uses a concept of *events*- there is no `EventEmitter` involved since I haven't found a case where async eventing was useful and/or desired. If needed a wrapper function would be very easy to create.
+
+## Copy Example
+Here is an example taken from the `propex.copy(obj)` utility:
+```javascript
+var result;
+var depth = 0;
+var P = require("propex");
+var propex = P("{baz{cat[{sound}]}}");
+var test = {foo:8, bar: false, baz:{ dog:"bark", cat:[{type:"lion",sound:"rawr"},{type:"house",sound:"meow"}]}};
+
+propex.recurse(test, {
+	found: function(property, name, value, context){
+		console.log("found",tabs.substr(0, depth), name, value, property.name);
+		context[name] = value;
+	},
+	objectStart: function(property, name, item, context){
+		console.log("start",tabs.substr(0, depth++), name);
+		var newObj = Array.isArray(item)? [] : {};
+
+		if(!context)
+			result = newObj;
+		else context[name] = newObj;
+
+		return newObj;
+	},
+	objectEnd: function(property, name, item, context){
+		console.log("end",tabs.substr(0, --depth), name);
+	}
+});
+```
+
+## event: objectStart(property, key, item, context)
+Called everytime a sub-object is found and will be recursively examined. Heads up: the sub-object may be an Array!
+
+You must return a context that you want for the sub-items.
+
+## event: objectEnd(property, key, item, context)
+Called everytime a sub-object is has finished being examined.
+
+## event: found(property, key, item, context)
+Called when a key/value has been found.
+
+## event: missing(property, key, context)
+Called when a key/value is missing and the property is not maked as optional.
+
+It will also be called if not optional and the value is an array, but the propex is expecting an object... or vice versa.
+
+## event: marker(property, key, item, context)
+Called when a marker is encountered in the propex.
 
 ### Markers
 Markers take the form of $number. They simply mark an object or sub object- the meaning of which is completely implementation specific.
