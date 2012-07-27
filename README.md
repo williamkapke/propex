@@ -116,7 +116,27 @@ Ok, without nesting- all of this is really really lame. Nesting is the entire re
 "{name,locations[{address,position,departments[{name,hours,phone$0},0{name,hours?,phone?}$1],website,storeid}$1]$42}"
 ```
 
-### Lets be picky
+### Markers
+Markers take the form of $number. They simply mark an object or sub object- the meaning of which is completely implementation specific.
+
+To understand them, I'll tell you why I added them: to extend JSON Serialization of objects.
+
+As a silly example: Say you have the typical *Order* object that has the usual items and their costs. You COULD add another property to the object with the total... or you could 
+put a marker in the Propex that flags tells the serializer to call a callback- which injects the total in the serialized JSON.
+
+Or, for data transformation before validation. Say you are reading in some JSON that has:
+```javascript
+{"Position":{"Longitude":0, "Latitude":0 }}
+```
+
+But you need:
+```javascript
+{"Position":"0,0"}
+```
+
+Markers allowed me to signal the serializer to call a callback and transform the value.
+
+##Lets be picky
 The simplest of utilities comes along with propex: A "picky" copy utility.
 
 By using a propex to copy another object, you can choose which properties you want to be copied to the new object.
@@ -151,12 +171,12 @@ console.log(JSON.stringify(result));
 //{"baz":{"cat":[{"sound":"rawr"},{"sound":"meow"}]}}
 ```
 
-### Examining objects
+##Examining objects
 A [propex](http://williamwicks.github.com/propex) object has a `recurse(obj, events)` function that allows you to examine an object as it is applied to the [propex](http://williamwicks.github.com/propex).
 
 Although the `recurse(obj, events)` uses a concept of *events*- there is no `EventEmitter` involved since I haven't found a case where async eventing was useful and/or desired. If needed a wrapper function would be very easy to create.
 
-## Copy Example
+### Copy Example
 Here is an example taken from the `propex.copy(obj)` utility:
 ```javascript
 var result;
@@ -186,45 +206,24 @@ propex.recurse(test, {
 });
 ```
 
-## event: objectStart(property, key, item, context)
+### event: objectStart(property, key, item, context)
 Called everytime a sub-object is found and will be recursively examined. Heads up: the sub-object may be an Array!
 
 You must return a context that you want for the sub-items.
 
-## event: objectEnd(property, key, item, context)
+### event: objectEnd(property, key, item, context)
 Called everytime a sub-object is has finished being examined.
 
-## event: found(property, key, item, context)
+### event: found(property, key, item, context)
 Called when a key/value has been found.
 
-## event: missing(property, key, context)
+### event: missing(property, key, context)
 Called when a key/value is missing and the property is not maked as optional.
 
 It will also be called if not optional and the value is an array, but the propex is expecting an object... or vice versa.
 
-## event: marker(property, key, item, context)
+### event: marker(property, key, item, context)
 Called when a marker is encountered in the propex.
-
-### Markers
-Markers take the form of $number. They simply mark an object or sub object- the meaning of which is completely implementation specific.
-
-To understand them, I'll tell you why I added them: to extend JSON Serialization of objects.
-
-As a silly example: Say you have the typical *Order* object that has the usual items and their costs. You COULD add another property to the object with the total... or you could 
-put a marker in the Propex that flags tells the serializer to call a callback- which injects the total in the serialized JSON.
-
-Or, for data transformation before validation. Say you are reading in some JSON that has:
-```javascript
-{"Position":{"Longitude":0, "Latitude":0 }}
-```
-
-But you need:
-```javascript
-{"Position":"0,0"}
-```
-
-Markers allowed me to signal the serializer to call a callback and transform the value.
-
 
 # Installation
 
