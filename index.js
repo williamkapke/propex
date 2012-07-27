@@ -43,15 +43,14 @@ Propex.prototype = {
 	},
 	recurse: function(obj, events, context){
 		var property = { name:null, isOptional:false, subproperties:this };
-		examine(null, obj, property, events, context);
+		return examine(null, obj, property, events, context);
 	}
 };
 function examine(key, item,  property, events, context){
 	var subs = property.subproperties;
 	if(item == undefined || (subs && typeMismatch(subs.isArray, item))) {
 		if(!property.isOptional && events.missing)
-			events.missing(property, key, context);
-		return;
+			return events.missing(property, key, context);
 	}
 
 	if(subs) {
@@ -68,7 +67,7 @@ function examine(key, item,  property, events, context){
 			events.marker(property, key, item, subContext);
 		}
 		if(events.objectEnd)
-			events.objectEnd(property, key, item, context);
+			return events.objectEnd(property, key, item, subContext);
 	}
 	else {
 		if(events.found) events.found(property, key, item, context);
