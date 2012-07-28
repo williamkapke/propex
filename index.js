@@ -51,6 +51,7 @@ function examine(key, item,  property, events, context){
 	if(item == undefined || (subs && typeMismatch(subs.isArray, item))) {
 		if(!property.isOptional && events.missing)
 			return events.missing(property, key, context);
+		return;
 	}
 
 	if(subs) {
