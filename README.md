@@ -1,6 +1,6 @@
 [propex](http://williamwicks.github.com/propex) expressions are strings that describe how you want to interact with an object.
 
-Sound vague? That's intentional. Its like describing what a regular expresson does: may things!
+Sound vague? That's intentional.
 
 A Propex object provides an Abstract Syntax Tree (AST) of the expression parsed from the string. What you choose to do with that AST is limitless.
 
@@ -62,6 +62,7 @@ Notice it doesn't define how to validate the values themselves (like a phone num
 ## What is this for?
 Propex isn't desiged for a specific use, but I've found it useful for:
 
+- [Deep Copying Objects](#lets-be-picky)
 - Validating JSON objects
 - Specifing batch objects that I want retrieved from web services.
 - Specifing columns I want returned from a database- and even that I want sub tables joined and merged
@@ -96,10 +97,10 @@ Arrays use the [] syntax and can be followed with "min:max?"
 //an array that should have up-to 15 items in it
 "[]0:15"
 
-//an array that should exactly 3 items in it
+//an array that should have exactly 3 items in it
 "[]3"
 
-//an array that should exactly 3 items in it *if it exists at all*
+//an array that should have exactly 3 items in it *if it exists at all*
 "[]3?"
 
 //an array that should have objects with and 'id' property 
@@ -122,7 +123,7 @@ Markers take the form of $number. They simply mark an object or sub object- the 
 To understand them, I'll tell you why I added them: to extend JSON Serialization of objects.
 
 As a silly example: Say you have the typical *Order* object that has the usual items and their costs. You COULD add another property to the object with the total... or you could 
-put a marker in the Propex that flags tells the serializer to call a callback- which injects the total in the serialized JSON.
+put a marker in the Propex that tells the serializer to call a callback at that spot- which we can then inject the total in to the output.
 
 Or, for data transformation before validation. Say you are reading in some JSON that has:
 ```javascript
