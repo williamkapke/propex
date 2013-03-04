@@ -5,28 +5,29 @@ Sound vague? That's intentional.
 A Propex object provides an Abstract Syntax Tree (AST) of the expression parsed from the string. What you choose to do with that AST is limitless.
 
 # Technical definition
-	PROPERTYGROUP | ARRAYGROUP
-	PROPERTYGROUP	::= '{' + PROPERTIES? MARKER? + '}'
-	ARRAYGROUP		::= '[' + (PROPERTYGROUP | INDEXITEMS | PROPERTYGROUP(',' + INDEXITEMS))? MARKER? + ']' QUANTITY?
-	PROPERTIES		::= PROPERTY(',' + PROPERTY)*
-	INDEXITEMS		::= INDEXITEM(',' + INDEXITEM)*
-	PROPERTY		::= NAME (ARRAYGROUP | PROPERTYGROUP)? OPTIONAL?
-	INDEXITEM		::= NUMBER (ARRAYGROUP | PROPERTYGROUP)? OPTIONAL?
-	QUANTITY		::= NUMBER | MIN + ':' | ':' + MAX | MIN + ':' + MAX
-	MARKER			::= '$' + NUMBER
-	OPTIONAL		::= '?'
-	MIN				::= NUMBER
-	MAX				::= NUMBER
-	NUMBER			::= [0-9]+
-	
-	Example ranges and their meanings:
-	PPP,						min=0 max=		Required
-	PPP?						min=0 max=		Optional
-	PPP{PPP}?					min=0 max=		Required
-	PPP[PPP]?					min=0 max=		Optional
-	PPP[PPP]5?					min=5 max=5		Optional
-	PPP[PPP]1:5?				min=1 max=5		Optional
+```
+PROPERTYGROUP / ARRAYGROUP
+PROPERTYGROUP	= '{' *PROPERTIES [MARKER] '}'
+ARRAYGROUP		= '[' *(PROPERTYGROUP / INDEXITEMS) [MARKER] ']' [QUANTITY]
+PROPERTIES      = PROPERTY *(',' PROPERTY)
+INDEXITEMS		= INDEXITEM *(',' INDEXITEM)
+PROPERTY		= 1*(ALPHA / DIGIT) [ARRAYGROUP / PROPERTYGROUP] [OPTIONAL]
+INDEXITEM		= DIGIT [ARRAYGROUP / PROPERTYGROUP] [OPTIONAL]
+QUANTITY		= DIGIT / (MIN ':') / (':' MAX) / (MIN ':' MAX)
+MARKER			= '$' DIGIT
+OPTIONAL		= '?'
+MIN				= DIGIT
+MAX				= DIGIT
 
+
+Example ranges and their meanings:
+PPP,						min=0 max=		Required
+PPP?						min=0 max=		Optional
+PPP{PPP}?					min=0 max=		Required
+PPP[PPP]?					min=0 max=		Optional
+PPP[PPP]5?					min=5 max=5		Optional
+PPP[PPP]1:5?				min=1 max=5		Optional
+```
 
 ...simple right?
 
