@@ -63,7 +63,7 @@ Notice it doesn't define how to validate the values themselves (like a phone num
 Propex isn't desiged for a specific use, but I've found it useful for:
 
 - [Deep Copying Objects](#lets-be-picky)
-- Validating JSON objects
+- [Validating JSON objects](https://github.com/williamwicks/propex-validation)
 - Specifing batch objects that I want retrieved from web services.
 - Specifing columns I want returned from a database- and even that I want sub tables joined and merged
 
