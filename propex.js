@@ -124,7 +124,7 @@ function propex(properties, marker, isArray, min, max, source){
 
 	if (properties) {
 		properties.forEach(function(target){
-			items[target.name.toLowerCase()] =  target;
+			items[target.name] =  target;
 		});
 	}
 	Object.freeze(this.items);

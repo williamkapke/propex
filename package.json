@@ -1,6 +1,6 @@
 {
 	"name": "propex",
-	"version": "0.2.4",
+	"version": "1.2.5",
 	"description": "Propex parses string expressions that provide taversal information about an object",
 	"keywords": ["propex", "property expressions", "deep", "copy", "clone"],
 	"homepage": "http://github.com/williamwicks/propex",
