@@ -1,6 +1,7 @@
 
 //PropertyExpressions are immutable- so lets cache them.
 var cache = {};
+var undefined = cache[-1];//paranoia?
 
 
 function Propex(value) {
@@ -34,10 +35,10 @@ Propex.prototype = {
 				else context[name] = newObj;
 
 				return newObj;
+			},
+			missing: function(property, name, context){
+				context[name] = undefined;
 			}
-//			,objectEnd: function(property, name, item, context){
-//				console.log("end",tabs.substr(0, --depth), name);
-//			}
 		});
 		return result;
 	},
@@ -86,15 +87,14 @@ function examineArray(array, propex, events, context){
 	var defaultProperty = propex.items["-1"],
 		pxItems = propex.items,
 		property,
+		l = Math.max(propex.min, array.length),
 		i;
 
-	for(i=0;i<array.length;i++){
-		if(i > propex.max){
+	for(i=0;i<l;i++){
+		if(i >= propex.max){
 			break;
 		}
-		property = pxItems[i] || defaultProperty;
-		if (property == null)
-			throw new Error("No Property specifed for item[" + i + "] and no default is specified.");
+		property = pxItems[i] || defaultProperty || {isOptional:false};
 
 		examine(i, array[i], property, events, context);
 	}

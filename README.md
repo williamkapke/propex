@@ -171,6 +171,11 @@ var propex = P("{baz{cat[{sound}]}}");
 var result = propex.copy(test);
 console.log(JSON.stringify(result));
 //{"baz":{"cat":[{"sound":"rawr"},{"sound":"meow"}]}}
+
+var propex = P("{baz{cat[]3:}}");
+var result = propex.copy(test);
+console.log(JSON.stringify(result));
+//{"baz":{"cat":[{"type":"lion"},{"type":"house"},null,null,null,null]}}
 ```
 
 ##Examining objects
