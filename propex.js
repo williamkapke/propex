@@ -49,13 +49,13 @@ Propex.prototype = {
 };
 function examine(key, item,  property, events, context){
 	var subs = property.subproperties;
-	if(item == undefined || (subs && typeMismatch(subs.isArray, item))) {
+	if(item === undefined || (subs && typeMismatch(subs.isArray, item))) {
 		if(!property.isOptional && events.missing)
 			return events.missing(property, key, context);
 		return;
 	}
 
-	if(subs) {
+	if(subs && item) {
 		var subContext = context;
 		if(events.objectStart)
 			subContext = events.objectStart(property, key, item, context);
