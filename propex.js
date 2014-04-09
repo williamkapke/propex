@@ -20,7 +20,7 @@ Propex.prototype = {
 	},
 	copy: function(source){
 		var result;
-//		var depth = 0;
+//		var depth= 0,tabs='\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t';
 		this.recurse(source, {
 			found: function(property, name, value, context){
 //				console.log("found",tabs.substr(0, depth), name, value, property.name);
@@ -28,7 +28,7 @@ Propex.prototype = {
 			},
 			objectStart: function(property, name, item, context){
 //				console.log("start",tabs.substr(0, depth++), name);
-				var newObj = Array.isArray(item)? [] : {};
+				var newObj = item===null? null : Array.isArray(item)? [] : {};
 
 				if(!context)
 					result = newObj;
@@ -49,7 +49,7 @@ Propex.prototype = {
 };
 function examine(key, item,  property, events, context){
 	var subs = property.subproperties;
-	if(item == undefined || (subs && typeMismatch(subs.isArray, item))) {
+	if(item === undefined || (subs && typeMismatch(subs.isArray, item))) {
 		if(!property.isOptional && events.missing)
 			return events.missing(property, key, context);
 		return;
@@ -59,10 +59,13 @@ function examine(key, item,  property, events, context){
 		var subContext = context;
 		if(events.objectStart)
 			subContext = events.objectStart(property, key, item, context);
-		if(subs.isArray)
-			examineArray(item, subs, events, subContext);
-		else {
-			examineObject(item, subs, events, subContext);
+
+		if(item!==null) {
+			if(subs.isArray)
+				examineArray(item, subs, events, subContext);
+			else {
+				examineObject(item, subs, events, subContext);
+			}
 		}
 
 		if(subs.marker && events.marker){
