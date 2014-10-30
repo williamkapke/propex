@@ -138,44 +138,52 @@ But you need:
 
 Markers allowed me to signal the serializer to call a callback and transform the value.
 
-##Lets be picky
-The simplest of utilities comes along with propex: A "picky" copy utility.
+##Lets be picky... very picky
+The simplest of utilities comes along with propex: A "picky" copy and rename utility.
 
-By using a propex to copy another object, you can choose which properties you want to be copied to the new object.
+By using a propex to copy another object, you can choose which properties you want
+to be copied to the new object. Better yet- using markers, you can specify the name
+of destination property to copy it to.
 
 ```javascript
 var P = require("propex");
-var test = {foo:8, bar: false, baz:{ dog:"bark", cat:[{type:"lion",sound:"rawr"},{type:"house",sound:"meow"}]}};
+var data = {foo:8, bar: false, baz:{ dog:"bark", cat:[{type:"lion",sound:"rawr"},{type:"house",sound:"meow"}]}};
 
 var propex = P("{baz}");
-var result = propex.copy(test);
+var result = propex.copy(data);
 console.log(JSON.stringify(result));
 //{"baz":{"dog":"bark","cat":[{"type":"lion","sound":"rawr"},{"type":"house","sound":"meow"}]}}
 
 var propex = P("{baz{}}");
-var result = propex.copy(test);
+var result = propex.copy(data);
 console.log(JSON.stringify(result));
 //{"baz":{}}
 
 var propex = P("{baz{dog}}");
-var result = propex.copy(test);
+var result = propex.copy(data);
 console.log(JSON.stringify(result));
 //{"baz":{"dog":"bark"}}
 
 var propex = P("{baz{cat[{}]}}");
-var result = propex.copy(test);
+var result = propex.copy(data);
 console.log(JSON.stringify(result));
 //{"baz":{"cat":[{},{}]}}
 
 var propex = P("{baz{cat[{sound}]}}");
-var result = propex.copy(test);
+var result = propex.copy(data);
 console.log(JSON.stringify(result));
 //{"baz":{"cat":[{"sound":"rawr"},{"sound":"meow"}]}}
 
 var propex = P("{baz{cat[]3:}}");
-var result = propex.copy(test);
+var result = propex.copy(data);
 console.log(JSON.stringify(result));
 //{"baz":{"cat":[{"type":"lion"},{"type":"house"},null,null,null,null]}}
+
+//... rename the `sound` property to `communication`
+var propex = P("{baz{cat[{sound>communication}]}}");
+var result = propex.copy(data);
+console.log(JSON.stringify(result));
+//{"baz":{"cat":[{"sound":"rawr"},{"sound":"meow"}]}}
 ```
 
 ##Examining objects

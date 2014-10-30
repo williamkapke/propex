@@ -24,7 +24,7 @@ Propex.prototype = {
 		this.recurse(source, {
 			found: function(property, name, value, context){
 //				console.log("found",tabs.substr(0, depth), name, value, property.name);
-				context[name] = value;
+				context[property.marker || name] = value;
 			},
 			objectStart: function(property, name, item, context){
 //				console.log("start",tabs.substr(0, depth++), name);
@@ -32,12 +32,12 @@ Propex.prototype = {
 
 				if(!context)
 					result = newObj;
-				else context[name] = newObj;
+				else context[property.marker || name] = newObj;
 
 				return newObj;
 			},
 			missing: function(property, name, context){
-				context[name] = undefined;
+				context[property.marker || name] = undefined;
 			}
 		});
 		return result;
@@ -68,9 +68,6 @@ function examine(key, item,  property, events, context){
 			}
 		}
 
-		if(subs.marker && events.marker){
-			events.marker(property, key, item, subContext);
-		}
 		if(events.objectEnd)
 			return events.objectEnd(property, key, item, subContext);
 	}
@@ -108,19 +105,19 @@ function typeMismatch(isArray, data){
 	return (isArray && !dataIsArray) || (!isArray && dataIsArray)
 }
 //holds info about each property
-function Property(name, isOptional, subproperties){
+function Property(name, isOptional, subproperties, marker){
 	this.name = name;
 	this.isOptional = isOptional;
 	this.subproperties = subproperties;
+	this.marker = marker;
 }
 
-function propex(properties, marker, isArray, min, max, source){
+function propex(properties, isArray, min, max, source){
 	var items = this.items = {};
 	//properties
 	this.min = min;
 	this.max = max;
 	this.isArray = isArray;
-	this.marker = marker;
 	this.length = properties.length;
 	if(source) //this only happens at the top level
 		this.source = source;
@@ -166,18 +163,10 @@ reader.prototype = {
 		var props = this.peek(1) == '}' ? [] : this.readProperties();
 		this.move(1);
 
-		var marker = null;
-		if (this.current == '$')
-		{
-			marker = this.readNumber();
-			this.move(1);
-		}
-		else marker = null;
-
 		if (this.current != '}')
 			throw new ParseError(this, "Unexpected character '" + this.current + "' in Propex.");
 
-		return new propex(props, marker, false, 1, 1, writeSource? this.source : null);
+		return new propex(props, false, 1, 1, writeSource? this.source : null);
 	},
 	readProperties: function() {
 		if (this.peek(1) == '$') return [];
@@ -193,6 +182,7 @@ reader.prototype = {
 	readProperty: function(name) {
 		var isOptional = false;
 		var subproperties = null;
+		var marker = this.readMarker(name);
 		var c = this.peek(1);
 		switch (c) {
 			case '{':
@@ -209,7 +199,14 @@ reader.prototype = {
 			isOptional = true;
 			this.move(1);
 		}
-		return new Property(name, isOptional, subproperties);
+		return new Property(name, isOptional, subproperties, marker);
+	},
+	readMarker:function(name) {
+		c = this.peek(1);
+		if (c !== '>' && c !== '$') return;
+		this.move(1);
+		c = this.peek(1);
+		return c===','? name : isDigit(c)? this.readNumber() : this.readPropertyName();
 	},
 	readIndexItem: function() {
 		return this.readProperty(this.readNumber().toString());
@@ -253,7 +250,6 @@ reader.prototype = {
 		this.move(1);
 		var c = this.peek(1);
 		var indexitems = [];
-		var marker;
 
 		if (c == '{') {
 			indexitems.push(new Property("-1", false, this.readPropertyGroup()));
@@ -276,11 +272,6 @@ reader.prototype = {
 			indexitems.push.apply(indexitems, this.readIndexItems());
 
 		this.move(1);
-		if (this.current == '$') {
-			marker = this.readNumber();
-			this.move(1);
-		}
-		else marker = null;
 
 		if (this.current != ']')
 			throw new ParseError(this, "Unexpected character in pattern.");
@@ -294,7 +285,7 @@ reader.prototype = {
 			if (mm.max < mm.min)
 				throw new ParseError(this, "max is less than min");
 		}
-		return new propex(indexitems, marker, true, mm.min, mm.max, writeSource? this.source : null);
+		return new propex(indexitems, true, mm.min, mm.max, writeSource? this.source : null);
 	},
 	readQuantity: function(mm) {
 		var c = this.peek(1);
