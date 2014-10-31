@@ -149,22 +149,22 @@ Renaming properties:
 ```javascript
 var Px = require("propex");
 var data = [
-  {_id:523917},
-  {_id:670231},
-  {_id:204975},
-  {_id:627683}
+  {_id:"5452fb36c2a72b807d4e7e98"},
+  {_id:"5452fb3fbf9df78086d8cc60"},
+  {_id:"5452fb45ca6298808f03f5c2"},
+  {_id:"5452fb4aab88b68098f1d2c9"}
 ];
 
 var result = Px('[_id>mongo_id]').copy(data);
 
 console.log(result);
-//[ { mongo_id: 523917 },
-//  { mongo_id: 670231 },
-//  { mongo_id: 204975 },
-//  { mongo_id: 627683 } ]
+//[ { mongo_id: "5452fb36c2a72b807d4e7e98" },
+//  { mongo_id: "5452fb3fbf9df78086d8cc60" },
+//  { mongo_id: "5452fb45ca6298808f03f5c2" },
+//  { mongo_id: "5452fb4aab88b68098f1d2c9" } ]
 ```
 
-Using modifiers for type cohersion:
+Using modifiers for type coercion:
 ```javascript
 var Px = require("propex");
 var data = {
