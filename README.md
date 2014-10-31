@@ -7,26 +7,17 @@ A Propex object provides an Abstract Syntax Tree (AST) of the expression parsed 
 # Technical definition
 ```
 PROPERTYGROUP / ARRAYGROUP
-PROPERTYGROUP	= '{' *PROPERTIES [MARKER] '}'
-ARRAYGROUP		= '[' *(PROPERTYGROUP / INDEXITEMS) [MARKER] ']' [QUANTITY]
+PROPERTYGROUP	= '{' *PROPERTIES '}'
+ARRAYGROUP		= '[' *(PROPERTYGROUP / INDEXITEMS) ']' [QUANTITY]
 PROPERTIES      = PROPERTY *(',' PROPERTY)
 INDEXITEMS		= INDEXITEM *(',' INDEXITEM)
-PROPERTY		= 1*(ALPHA / DIGIT) [ARRAYGROUP / PROPERTYGROUP] [OPTIONAL]
+PROPERTY		= 1*(ALPHA / DIGIT) [MARKER] [ARRAYGROUP / PROPERTYGROUP] [OPTIONAL]
 INDEXITEM		= DIGIT [ARRAYGROUP / PROPERTYGROUP] [OPTIONAL]
 QUANTITY		= DIGIT / (MIN ':') / (':' MAX) / (MIN ':' MAX)
-MARKER			= '$' DIGIT
+MARKER			= ('$' / '>') [ALPHA / DIGIT]
 OPTIONAL		= '?'
 MIN				= DIGIT
 MAX				= DIGIT
-
-
-Example ranges and their meanings:
-PPP,						min=0 max=		Required
-PPP?						min=0 max=		Optional
-PPP{PPP}?					min=0 max=		Required
-PPP[PPP]?					min=0 max=		Optional
-PPP[PPP]5?					min=5 max=5		Optional
-PPP[PPP]1:5?				min=1 max=5		Optional
 ```
 
 ...simple right?
@@ -87,6 +78,16 @@ We borrow the '?' concept from regular expressions to indicate an item is option
 
 ### Arrays
 Arrays use the [] syntax and can be followed with "min:max?"
+
+```
+Example ranges and their meanings:
+PPP,						min=0 max=		Required
+PPP?						min=0 max=		Optional
+PPP{PPP}?					min=0 max=		Required
+PPP[PPP]?					min=0 max=		Optional
+PPP[PPP]5?					min=5 max=5		Optional
+PPP[PPP]1:5?				min=1 max=5		Optional
+```
 
 ```javascript
 //an array is required
