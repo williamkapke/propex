@@ -52,6 +52,14 @@ Propex.prototype = {
   recurse: function(obj, events, context){
     var property = { name:null, isOptional:false, subproperties:this };
     return examine(null, obj, property, events, context);
+  },
+  fields: function() {
+    var out = {};
+    var items = this.items;
+    Object.keys(items).forEach(function(k) {
+      out[k] = items[k].subproperties? items[k].subproperties.fields() : 1;
+    });
+    return out;
   }
 };
 function rename(property, value, target) {

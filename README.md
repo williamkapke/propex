@@ -283,6 +283,18 @@ Called when a key/value is missing and the property is not maked as optional.
 
 It will also be called if not optional and the value is an array, but the propex is expecting an object... or vice versa.
 
+## propex.fields()
+You can get a (mongo style 'fields' projection)[http://docs.mongodb.org/manual/tutorial/project-fields-from-query-results/#return-specified-fields-only]
+by calling the `fields` function of a `Propex` object.
+
+```javascript
+var Px = require("propex");
+var px = Px("{_id,foo,cat}");
+
+console.log(px.fields());
+//{ _id: 1, foo: 1, cat: 1 }
+```
+
 
 # Installation
 
