@@ -14,7 +14,7 @@ INDEXITEMS		= INDEXITEM *(',' INDEXITEM)
 PROPERTY		= 1*(ALPHA / DIGIT) [MARKER] [ARRAYGROUP / PROPERTYGROUP] [OPTIONAL]
 INDEXITEM		= DIGIT [ARRAYGROUP / PROPERTYGROUP] [OPTIONAL]
 QUANTITY		= DIGIT / (MIN ':') / (':' MAX) / (MIN ':' MAX)
-MARKER			= ('$' / '>') [ALPHA / DIGIT]
+MARKER			= ('$' / '>') [ALPHANUMERIC]
 OPTIONAL		= '?'
 MIN				= DIGIT
 MAX				= DIGIT
@@ -52,12 +52,10 @@ Notice it doesn't define how to validate the values themselves (like a phone num
 
 
 ## What is this for?
-Propex isn't desiged for a specific use, but I've found it useful for:
-
-- [Deep Copying Objects](#lets-be-picky)
+- [Deep Copying Objects](#lets-be-picky-very-picky)
 - [Validating JSON objects](https://github.com/williamwicks/propex-validation)
-- Specifing batch objects that I want retrieved from web services.
-- Specifing columns I want returned from a database- and even that I want sub tables joined and merged
+- Specifing batch objects that retrieved from web services.
+- Specifing columns returned from a database- and even that sub tables to be joined and merged
 
 ##Syntax
 Ok, the technical syntax above isn't super simple to understand.
@@ -72,7 +70,7 @@ We borrow the '?' concept from regular expressions to indicate an item is option
 
 ### Objects
 ```javascript
-//an object that must have a username and password. But optionally dob and height.
+//an object that must have a `username` and `password`. But optionally `dob` and `height`.
 "{username,password,dob?,height?}"
 ```
 
@@ -88,7 +86,7 @@ PPP[PPP]?					min=0 max=		Optional
 PPP[PPP]5?					min=5 max=5		Optional
 PPP[PPP]1:5?				min=1 max=5		Optional
 ```
-
+Examples:
 ```javascript
 //an array is required
 "[]"
@@ -113,78 +111,124 @@ PPP[PPP]1:5?				min=1 max=5		Optional
 ```
 
 ### Nesting
-Ok, without nesting- all of this is really really lame. Nesting is the entire reason for all of this.
+Ok, without nesting- all of this is really really lame. Targeting nested objects is the entire point!
 
+Nested Object/Array Example:
 ```javascript
-"{name,locations[{address,position,departments[{name,hours,phone$0},0{name,hours?,phone?}$1],website,storeid}$1]$42}"
+"{name,locations[{address,position,departments[{name,hours,phone},0{name,hours?,phone?}],website,storeid}]}"
 ```
 
-### Markers
-Markers take the form of $number. They simply mark an object or sub object- the meaning of which is completely implementation specific.
-
-To understand them, I'll tell you why I added them: to extend JSON Serialization of objects.
-
-As a silly example: Say you have the typical *Order* object that has the usual items and their costs. You COULD add another property to the object with the total... or you could 
-put a marker in the Propex that tells the serializer to call a callback at that spot- which we can then inject the total in to the output.
-
-Or, for data transformation before validation. Say you are reading in some JSON that has:
-```javascript
-{"Position":{"Longitude":0, "Latitude":0 }}
-```
-
-But you need:
-```javascript
-{"Position":"0,0"}
-```
-
-Markers allowed me to signal the serializer to call a callback and transform the value.
+### Meta Markers
+Meta Markers simply mark a property with whatever meta string you want. If you do not
+specify a meta string to the right of the `$` or `>`, the meta string will be the
+same as the property name.
 
 ##Lets be picky... very picky
 The simplest of utilities comes along with propex: A "picky" copy and rename utility.
 
 By using a propex to copy another object, you can choose which properties you want
-to be copied to the new object. Better yet- using markers, you can specify the name
-of destination property to copy it to.
+to be copied to the new object. Using markers, you can even specify the name
+of destination property to copy to!
 
+### propex.copy(source [,modifiers])
+- _**source**_ - The object you want to copy values from.
+- _**modifiers**_ - An object with properties that match marker names. If a `meta`
+string is found in the `propex` but a corresponding modifier is not found, it will
+default to renaming the property to the `meta` string.
+- _**returns:**_ The newly composed object 
+
+
+### Meta Markers & Modifiers
+You can use Meta Markers & Modifiers to transform the output of a property. The second
+parameter to the copy function, `modifiers`, allows you to specify an object with
+matching marker names that will modify the output during the copy process. If a 
+modifier matching the meta string is not found, it will default to renaming the property
+to the value of the meta string.
+
+Renaming properties:
 ```javascript
-var P = require("propex");
+var Px = require("propex");
+var data = [
+  {_id:523917},
+  {_id:670231},
+  {_id:204975},
+  {_id:627683}
+];
+
+var result = Px('[_id>mongo_id]').copy(data);
+
+console.log(result);
+//[ { mongo_id: 523917 },
+//  { mongo_id: 670231 },
+//  { mongo_id: 204975 },
+//  { mongo_id: 627683 } ]
+```
+
+Using modifiers for type cohersion:
+```javascript
+var Px = require("propex");
+var data = {
+  id:"670231",
+  birth_date:"1986-03-16T08:00:00.000Z"
+};
+
+var modifiers = {
+  Date: function(property, value, target) {
+    target[property.name] = new Date(value)
+  },
+  Number: function(property, value, target) {
+    target[property.name] = parseFloat(value);
+  }
+};
+
+var result = Px('{id>Number,birth_date>Date}').copy(data, modifiers);
+
+console.log(result);
+//{ id: 670231,
+//  birth_date: Sun Mar 16 1986 08:00:00 GMT+0000 (UTC) }
+```
+
+
+### Examples
+```javascript
+var Px = require("propex");
 var data = {foo:8, bar: false, baz:{ dog:"bark", cat:[{type:"lion",sound:"rawr"},{type:"house",sound:"meow"}]}};
 
-var propex = P("{baz}");
+var propex = Px("{baz}");
 var result = propex.copy(data);
 console.log(JSON.stringify(result));
 //{"baz":{"dog":"bark","cat":[{"type":"lion","sound":"rawr"},{"type":"house","sound":"meow"}]}}
 
-var propex = P("{baz{}}");
+var propex = Px("{baz{}}");
 var result = propex.copy(data);
 console.log(JSON.stringify(result));
 //{"baz":{}}
 
-var propex = P("{baz{dog}}");
+var propex = Px("{baz{dog}}");
 var result = propex.copy(data);
 console.log(JSON.stringify(result));
 //{"baz":{"dog":"bark"}}
 
-var propex = P("{baz{cat[{}]}}");
+var propex = Px("{baz{cat[{}]}}");
 var result = propex.copy(data);
 console.log(JSON.stringify(result));
 //{"baz":{"cat":[{},{}]}}
 
-var propex = P("{baz{cat[{sound}]}}");
+var propex = Px("{baz{cat[{sound}]}}");
 var result = propex.copy(data);
 console.log(JSON.stringify(result));
 //{"baz":{"cat":[{"sound":"rawr"},{"sound":"meow"}]}}
 
-var propex = P("{baz{cat[]3:}}");
+var propex = Px("{baz{cat[]3:}}");
 var result = propex.copy(data);
 console.log(JSON.stringify(result));
 //{"baz":{"cat":[{"type":"lion"},{"type":"house"},null,null,null,null]}}
 
 //... rename the `sound` property to `communication`
-var propex = P("{baz{cat[{sound>communication}]}}");
+var propex = Px("{baz{cat[{sound>communication}]}}");
 var result = propex.copy(data);
 console.log(JSON.stringify(result));
-//{"baz":{"cat":[{"sound":"rawr"},{"sound":"meow"}]}}
+//{"baz":{"cat":[{"communication":"rawr"},{"communication":"meow"}]}}
 ```
 
 ##Examining objects
@@ -197,9 +241,10 @@ Here is an example taken from the `propex.copy(obj)` utility:
 ```javascript
 var result;
 var depth = 0;
-var P = require("propex");
-var propex = P("{baz{cat[{sound}]}}");
+var Px = require("propex");
+var propex = Px("{baz{cat[{sound}]}}");
 var test = {foo:8, bar: false, baz:{ dog:"bark", cat:[{type:"lion",sound:"rawr"},{type:"house",sound:"meow"}]}};
+var tabs='\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t';
 
 propex.recurse(test, {
 	found: function(property, name, value, context){
@@ -238,8 +283,6 @@ Called when a key/value is missing and the property is not maked as optional.
 
 It will also be called if not optional and the value is an array, but the propex is expecting an object... or vice versa.
 
-### event: marker(property, key, item, context)
-Called when a marker is encountered in the propex.
 
 # Installation
 
@@ -248,7 +291,7 @@ Called when a marker is encountered in the propex.
 ## License
 
 The MIT License (MIT)
-Copyright (c) 2012 William Wicks
+Copyright (c) 2012-2014 William Wicks
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in

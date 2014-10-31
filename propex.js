@@ -18,27 +18,33 @@ Propex.prototype = {
   toString: function(){
     return this.source;
   },
-  copy: function(source){
+  copy: function(source, modifiers){
     var result;
-//		var depth= 0,tabs='\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t';
+    var isArray = Array.isArray(source);
+    if (this.isArray && !isArray) throw new Error("Expected source to be an Array");
+    if (isArray && !this.isArray) throw new Error("Expected source to be an Object");
+
+    function assign(property, name, value, context){
+      if(typeof property.marker === "undefined")
+        return context[name] = value;
+
+      var modifier = (modifiers && modifiers[property.marker]) || rename;
+      modifier(property, value, context);
+    }
     this.recurse(source, {
-      found: function(property, name, value, context){
-//				console.log("found",tabs.substr(0, depth), name, value, property.name);
-        context[property.marker || name] = value;
-      },
+      found: assign,
       objectStart: function(property, name, item, context){
-//				console.log("start",tabs.substr(0, depth++), name);
         var newObj = item===null? null : Array.isArray(item)? [] : {};
 
         if(!context)
           result = newObj;
         else
-          context[property.marker || name] = newObj;
+          assign(property, name, newObj, context);
 
         return newObj;
       },
       missing: function(property, name, context){
-        context[property.marker || name] = undefined;
+        assign(property, name, undefined, context);
       }
     });
     return result;
@@ -48,6 +54,9 @@ Propex.prototype = {
     return examine(null, obj, property, events, context);
   }
 };
+function rename(property, value, target) {
+  target[property.marker] = value;
+}
 function examine(key, item,  property, events, context){
   var subs = property.subproperties;
   if(item === undefined || (subs && typeMismatch(subs.isArray, item))) {
@@ -108,7 +117,8 @@ function Property(name, isOptional, subproperties, marker){
   this.name = name;
   this.isOptional = isOptional;
   this.subproperties = subproperties;
-  this.marker = marker;
+  if(typeof marker!=="undefined")
+    this.marker = marker;
 }
 
 function propex(properties, isArray, min, max, source){
@@ -203,7 +213,7 @@ reader.prototype = {
     if (c !== '>' && c !== '$') return;
     this.move(1);
     c = this.peek(1);
-    return c===','? name : isDigit(c)? this.readNumber() : this.readPropertyName();
+    return /\w/.test(c)? this.readPropertyName(true) : name;
   },
   readIndexItem: function() {
     return this.readProperty(this.readNumber().toString());
@@ -225,12 +235,11 @@ reader.prototype = {
     this.move(len);
     return parseInt(name, 10);
   },
-  readPropertyName: function() {
-    var c = this.peek(1);
-    if (!isValidFirstChar(c))
+  readPropertyName: function(allowNumbers) {
+    if (!allowNumbers && !isValidFirstChar(this.peek(1)))
       throw new ParseError(this, "Unexpected character '" + c + "' in Propex.");
 
-    var len = 1;
+    var c,len = 1;
     while (true) {
       c = this.peek(++len);
       if (!/\w/.test(c)) break; // [a-zA-Z0-9_]
@@ -321,7 +330,6 @@ reader.prototype = {
 };
 
 //these are only here to provide semantics about their operation
-function isAsciiLetter(c) { return /[a-zA-Z]/.test(c); }
 function isDigit(c) { return /\d/.test(c); }
 function isValidFirstChar(c) { return /[a-zA-Z_]/.test(c); }
 
