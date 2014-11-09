@@ -1,22 +1,26 @@
 {
-	"name": "propex",
-	"version": "4.1.1",
-	"description": "Propex parses string expressions that provide taversal information about an object",
-	"keywords": ["propex", "property expressions", "deep", "copy", "clone"],
-	"homepage": "http://github.com/williamwicks/propex",
-	"repository": {
-		"type": "git",
-		"url": "git@github.com:williamwicks/propex.git"
-	},
-	"author"  : {
-		"name"  : "William Wicks",
-		"email" : "wjwicks@gmail.com"
-	},
-	"devDependencies": {
-	},
-	"main": "propex",
-	"engines": {
-		"node": "*"
-	},
-	"licenses": [{"type": "MIT", "url": "http://www.opensource.org/licenses/MIT"}]
+  "name": "propex-website",
+  "description": "",
+  "version": "0.0.0",
+  "author": "William Kapke <william.kapke@gmail.com>",
+  "license": "MIT",
+  "main": "lib",
+  "dependencies": {
+    "propex": "^4.1.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "mocha -R spec && npm run coverage",
+    "coverage": "istanbul cover node_modules/mocha/bin/_mocha",
+    "prepublish": "npm prune && linify transform bin && npm run build",
+    "build": "npm run compile",
+    "compile": "npm run compile-full && npm run compile-runtime",
+    "compile-full": "browserify ./lib/index.js --standalone jade -x ./node_modules/transformers > jade.js",
+    "compile-runtime": "browserify ./lib/runtime.js --standalone jade > runtime.js"
+  },
+  "browser": {
+    "fs": false,
+    "./lib/filters.js": "./lib/filters-client.js"
+  },
+  "homepage": "http://propex.org"
 }
