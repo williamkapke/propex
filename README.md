@@ -1,54 +1,49 @@
-[propex](http://williamwicks.github.com/propex) expressions are strings that describe how you want to interact with an object.
+[propex](http://williamwicks.github.com/propex) expressions are strings that
+describe how you want to interact with an object.
 
 Sound vague? That's intentional.
 
-A Propex object provides an Abstract Syntax Tree (AST) of the expression parsed from the string. What you choose to do with that AST is limitless.
+A Propex object provides an Abstract Syntax Tree (AST) of the expression parsed
+from the string. [What you choose to do with that AST](#what-is-this-for) is
+completely up-to-you.
 
 # Technical definition
 ```
 PROPERTYGROUP / ARRAYGROUP
-PROPERTYGROUP	= '{' *PROPERTIES '}'
-ARRAYGROUP		= '[' *(PROPERTYGROUP / INDEXITEMS) ']' [QUANTITY]
-PROPERTIES      = PROPERTY *(',' PROPERTY)
-INDEXITEMS		= INDEXITEM *(',' INDEXITEM)
-PROPERTY		= 1*(ALPHA / DIGIT) [MARKER] [ARRAYGROUP / PROPERTYGROUP] [OPTIONAL]
-INDEXITEM		= DIGIT [ARRAYGROUP / PROPERTYGROUP] [OPTIONAL]
-QUANTITY		= DIGIT / (MIN ':') / (':' MAX) / (MIN ':' MAX)
-MARKER			= ('$' / '>') [ALPHANUMERIC]
-OPTIONAL		= '?'
-MIN				= DIGIT
-MAX				= DIGIT
+PROPERTYGROUP = '{' *PROPERTIES '}'
+ARRAYGROUP    = '[' [PROPERTYGROUP] / [INDEXITEMS] / *(PROPERTYGROUP 1*(',' INDEXITEMS) ']' [QUANTITY]
+PROPERTIES    = PROPERTY *(',' PROPERTY)
+INDEXITEMS    = INDEXITEM *(',' INDEXITEM)
+PROPERTY      = 1*(ALPHA / DIGIT) [MARKER] [ARRAYGROUP / PROPERTYGROUP] [OPTIONAL]
+INDEXITEM     = DIGIT [MARKER] [ARRAYGROUP / PROPERTYGROUP] [OPTIONAL]
+QUANTITY      = DIGIT / (MIN ':') / (':' MAX) / (MIN ':' MAX)
+MARKER        = ('$' / '>') *(ALPHA / DIGIT)
+OPTIONAL      = '?'
+MIN           = DIGIT
+MAX           = DIGIT
 ```
-
 ...simple right?
 
 
 ##How about an example...
 You can make expressions like this:
 ```javascript
-var propex = Propex("{StoreName,Departments[0{Name,Phone,Hours},1{Name,Phone?,Hours?}]1:5?}")
+var Px = require('propex');
+var px = Px("[{_id>id,name,skill}]0:3");
 ```
-
-When applied to an object for validation, it says it is expecting to find:
+...and then _maybe_ use it to [copy/transform](#lets-be-picky-very-picky) some data, like this:
 ```javascript
-{
-	//required
-	"StoreName": "Walmart",
-
-	//Pay close attention to the end of the expression.
-	//It says "If it exists, the array must have 1 to 5 items in it.
-	"Departments": [
-
-		//the first item (zero) requires Name,Phone, and Hours
-		{"Name":"Store Hours", "Phone":"1231231234", "Hours":"6AM-11PM"},
-
-		//the 2nd one only has the name required
-		{"Name":"Pharmacy"}
-	]
-}
+var users = [
+  { _id:"4e7e98", name:"Tom", skill:"nodejs" },
+  { _id:"d8cc60", name:"William" },
+  { _id:"03f5c2", name:"Mike", skill:"design" },
+  { _id:"f1d2c9", name:"Gareth", skill:"marketing" }
+];
+console.log(px.copy(users));
+//[ { id: '4e7e98', name: 'Tom', skill: 'nodejs' },
+//  { id: 'd8cc60', name: 'William', skill: undefined },
+//  { id: '03f5c2', name: 'Mike', skill: 'design' } ]
 ```
-
-Notice it doesn't define how to validate the values themselves (like a phone number or email addrss). Propexi only define that objects/arrays should have something or not.
 
 
 ## What is this for?
@@ -64,18 +59,32 @@ It is ment to look JSON-like:
 - Objects use {}
 - Arrays use []
 
-We borrow from python a bit to indicate Array ranges: 5:7
-
-We borrow the '?' concept from regular expressions to indicate an item is optional.
+We borrow from python a bit to indicate Array ranges: 5:7<br>
+We borrow the '?' concept from regular expressions to indicate an item is optional.<br>
+We borrow the '>' from the unix command line to suggest redirection.<br>
 
 ### Objects
+Use curly braces `{}` to begin and end an object definition. Create a comma separated
+list of property names between them. You can follow it with a
+[meta markers](#meta-markers--modifiers) if you like and then optionally use a
+'?' to flag it as optional.
+
 ```javascript
-//an object that must have a `username` and `password`. But optionally `dob` and `height`.
-"{username,password,dob?,height?}"
+//An object that must have a `username` and `password`.
+//Optionally `dob` and `height`.
+// ...and mark `dob` with `birth_date`
+var px = Px("{username,password,dob>birth_date?,height?}")
 ```
 
 ### Arrays
-Arrays use the [] syntax and can be followed with "min:max?"
+Arrays use the square brace `[]` syntax. To define a sub-propex that you want
+applied to the items of the array, place an object or array definition inside
+the braces. If you want to define something different for specific indices,
+just create a comma separated list of definitions (like you would for an object), but
+use the the index number instead of a property name. The indices can even be
+followed it with a [meta marker](#meta-markers--modifiers) and the '?' optional flag.
+
+Additionally, just after the closing ']', you can add `min:max` numbers.
 
 ```
 Example ranges and their meanings:
@@ -86,6 +95,7 @@ PPP[PPP]?          min=  max=   Optional
 PPP[PPP]5?         min=5 max=   Optional
 PPP[PPP]1:5?       min=1 max=5  Optional
 ```
+
 Examples:
 ```javascript
 //an array is required
@@ -102,14 +112,6 @@ Examples:
 
 //same as above- but item[4] must have a url for some strange reason.
 "[{id},4{id,url}]"
-```
-
-### Nesting
-Ok, without nesting- all of this is really really lame. Targeting nested objects is the entire point!
-
-Nested Object/Array Example:
-```javascript
-"{name,locations[{address,position,departments[{name,hours,phone},0{name,hours?,phone?}],website,storeid}]}"
 ```
 
 ### Meta Markers
@@ -167,11 +169,11 @@ var data = {
 };
 
 var modifiers = {
-  Date: function(property, value, target) {
-    target[property.name] = new Date(value)
+  Date: function(property, name, value, target) {
+    target[name] = new Date(value)
   },
-  Number: function(property, value, target) {
-    target[property.name] = parseFloat(value);
+  Number: function(property, name, value, target) {
+    target[name] = parseFloat(value);
   }
 };
 
@@ -226,48 +228,56 @@ console.log(JSON.stringify(result));
 ```
 
 ##Examining objects
-A [propex](http://williamwicks.github.com/propex) object has a `recurse(obj, events)` function that allows you to examine an object as it is applied to the [propex](http://williamwicks.github.com/propex).
+A [propex](http://williamwicks.github.com/propex) object has a `recurse(obj, events)`
+function that allows you to examine an object as it is applied to the
+[propex](http://williamwicks.github.com/propex).
 
-Although the `recurse(obj, events)` uses a concept of *events*- there is no `EventEmitter` involved since I haven't found a case where async eventing was useful and/or desired. If needed a wrapper function would be very easy to create.
+Although the `recurse(obj, events)` uses a concept of *events*- there is no
+`EventEmitter` involved since I haven't found a case where async eventing was
+useful and/or desired. If needed a wrapper function would be very easy to create.
 
 ### Copy Example
 Here is an example taken from the `propex.copy(obj)` utility:
 ```javascript
-var result;
 var depth = 0;
 var Px = require("propex");
 var propex = Px("{baz{cat[{sound}]}}");
 var test = {foo:8, bar: false, baz:{ dog:"bark", cat:[{type:"lion",sound:"rawr"},{type:"house",sound:"meow"}]}};
 var tabs='\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t';
 
-propex.recurse(test, {
-	found: function(property, name, value, context){
-		console.log("found",tabs.substr(0, depth), name, value, property.name);
-		context[name] = value;
-	},
-	objectStart: function(property, name, item, context){
-		console.log("start",tabs.substr(0, depth++), name);
-		var newObj = Array.isArray(item)? [] : {};
+var result = propex.recurse(test, {
+  found: function(property, name, value, context){
+    console.log("found",tabs.substr(0, depth), name, value, property.name);
+    context[name] = value;
+  },
+  objectStart: function(property, name, item, context){
+    console.log("start",tabs.substr(0, depth++), name);
+    //it actually will do this automatically if you don't return anything...
+    return Array.isArray(item)? [] : {};
+  },
+  objectEnd: function(property, name, item, context){
+    console.log("end",tabs.substr(0, --depth), name);
 
-		if(!context)
-			result = newObj;
-		else context[name] = newObj;
-
-		return newObj;
-	},
-	objectEnd: function(property, name, item, context){
-		console.log("end",tabs.substr(0, --depth), name);
-	}
+    //it will be null at the root level
+    if(name!==null)
+      context[name] = item;
+    //return the final product!
+    else return item;
+  }
 });
+console.log(result);
 ```
 
 ### event: objectStart(property, key, item, context)
-Called everytime a sub-object is found and will be recursively examined. Heads up: the sub-object may be an Array!
+Called everytime a sub-object is found and will be recursively examined. Heads
+up: the sub-object may be an Array!
 
 You must return a context that you want for the sub-items.
 
 ### event: objectEnd(property, key, item, context)
-Called everytime a sub-object is has finished being examined.
+Called everytime a sub-object has finished being examined.
+
+`key` will be null at the root level.
 
 ### event: found(property, key, item, context)
 Called when a key/value has been found.
@@ -275,7 +285,8 @@ Called when a key/value has been found.
 ### event: missing(property, key, context)
 Called when a key/value is missing and the property is not maked as optional.
 
-It will also be called if not optional and the value is an array, but the propex is expecting an object... or vice versa.
+It will also be called if not optional and the value is an array, but the propex
+is expecting an object... or vice versa.
 
 ## propex.fields()
 You can get a (mongo style 'fields' projection)[http://docs.mongodb.org/manual/tutorial/project-fields-from-query-results/#return-specified-fields-only]
@@ -297,7 +308,7 @@ console.log(px.fields());
 ## License
 
 The MIT License (MIT)
-Copyright (c) 2012-2014 William Wicks
+Copyright (c) 2012-2014 William Kapke
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in

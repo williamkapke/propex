@@ -266,6 +266,8 @@ reader.prototype = {
         this.move(1);
         c = this.peek(1);
       }
+      else if(c!==']')
+        throw new ParseError(this, "Unexpected character in pattern.");
     }
     else if (c == '[') {
       indexitems.push(new Property("-1", false, this.readArrayGroup()));
@@ -274,6 +276,8 @@ reader.prototype = {
         this.move(1);
         c = this.peek(1);
       }
+      else if(c!==']')
+        throw new ParseError(this, "Unexpected character in pattern.");
     }
 
     if (isDigit(c))
