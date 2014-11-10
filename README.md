@@ -79,12 +79,12 @@ Arrays use the [] syntax and can be followed with "min:max?"
 
 ```
 Example ranges and their meanings:
-PPP,						min=0 max=		Required
-PPP?						min=0 max=		Optional
-PPP{PPP}?					min=0 max=		Required
-PPP[PPP]?					min=0 max=		Optional
-PPP[PPP]5?					min=5 max=5		Optional
-PPP[PPP]1:5?				min=1 max=5		Optional
+PPP,               min=  max=   Required
+PPP?               min=  max=   Optional
+PPP{PPP}?          min=  max=   Required
+PPP[PPP]?          min=  max=   Optional
+PPP[PPP]5?         min=5 max=   Optional
+PPP[PPP]1:5?       min=1 max=5  Optional
 ```
 Examples:
 ```javascript
@@ -97,13 +97,7 @@ Examples:
 //an array that should have up-to 15 items in it
 "[]0:15"
 
-//an array that should have exactly 3 items in it
-"[]3"
-
-//an array that should have exactly 3 items in it *if it exists at all*
-"[]3?"
-
-//an array that should have objects with and 'id' property 
+//an array that should have objects with and 'id' property
 "[{id}]"
 
 //same as above- but item[4] must have a url for some strange reason.
