@@ -20,39 +20,36 @@ Propex.prototype = {
     return this.source;
   },
   copy: function(source, modifiers){
-    var result;
     var isArray = Array.isArray(source);
     if (this.isArray && !isArray) throw new Error("Expected source to be an Array");
     if (isArray && !this.isArray) throw new Error("Expected source to be an Object");
 
-    function assign(property, name, value, context){
+    function assign(property, name, value, result){
       if(typeof property.marker === "undefined")
-        return context[name] = value;
+        return result[name] = value;
 
       var modifier = (modifiers && modifiers[property.marker]) || rename;
-      modifier(property, value, context);
+      modifier(property, name, value, result);
     }
-    this.recurse(source, {
+    return this.recurse(source, {
       found: assign,
-      objectStart: function(property, name, item, context){
-        var newObj = item===null? null : Array.isArray(item)? [] : {};
+      objectEnd: function(property, name, result, parent){
+        var subs = property.subproperties;
+        if(subs.isArray && (typeof subs.min!=="undefined" || typeof subs.max!=="undefined"))
+          result = result.slice(subs.min||0,subs.max);
 
-        if(!context)
-          result = newObj;
-        else
-          assign(property, name, newObj, context);
+        if(name!==null) assign(property, name, result, parent);
 
-        return newObj;
+        return result
       },
       missing: function(property, name, context){
         assign(property, name, undefined, context);
       }
     });
-    return result;
   },
-  recurse: function(obj, events, context){
+  recurse: function(obj, events, result){
     var property = { name:null, isOptional:false, subproperties:this };
-    return examine(null, obj, property, events, context);
+    return examine(null, obj, property, events, result);
   },
   fields: function() {
     var out = {};
@@ -63,57 +60,56 @@ Propex.prototype = {
     return out;
   }
 };
-function rename(property, value, target) {
+function rename(property, name, value, target) {
   target[property.marker] = value;
 }
-function examine(key, item,  property, events, context){
+function examine(key, item,  property, events, result){
   var subs = property.subproperties;
   if(item === undefined || (subs && typeMismatch(subs.isArray, item))) {
     if(!property.isOptional && events.missing)
-      return events.missing(property, key, context);
+      return events.missing(property, key, result);
     return;
   }
 
   if(subs) {
-    var subContext = context;
     if(events.objectStart)
-      subContext = events.objectStart(property, key, item, context);
+      var sub_result = events.objectStart(property, key, item, result);
 
     if(item!==null) {
       if(subs.isArray)
-        examineArray(item, subs, events, subContext);
+        examineArray(item, subs, events, sub_result || (sub_result=[]));
       else
-        examineObject(item, subs, events, subContext);
+        examineObject(item, subs, events, sub_result || (sub_result={}));
     }
 
     if(events.objectEnd)
-      return events.objectEnd(property, key, item, subContext);
+      //allow objectEnd to generate a completely new result, or just return the result obj
+      sub_result = events.objectEnd(property, key, sub_result, result) || result;
+
+    return sub_result;
   }
   else {
-    if(events.found) events.found(property, key, item, context);
+    if(events.found) events.found(property, key, item, result);
   }
 }
-function examineObject(obj, propex, events, context){
+function examineObject(obj, propex, events, result){
   var pxi = propex.items;
   var keys = Object.keys(pxi);
   for(var i=0;i<keys.length;i++){
     var key = keys[i];
-    examine(key, obj[key], pxi[key], events, context);
+    examine(key, obj[key], pxi[key], events, result);
   }
 }
-function examineArray(array, propex, events, context){
-  var defaultProperty = propex.items["-1"],
-    pxItems = propex.items,
-    property,
-    l = Math.max(propex.min, array.length),
-    i;
+function examineArray(array, propex, events, result){
+  var defaultProperty = propex.items["-1"];
+  var pxItems = propex.items;
+  var property;
+  var l = propex.max? propex.max : array.length;
+  var i = 0;
 
-  for(i=0;i<l;i++){
-    if(i >= propex.max)
-      break;
-
+  for(;i<l;i++){
     property = pxItems[i] || defaultProperty || {isOptional:false};
-    examine(i, array[i], property, events, context);
+    examine(i, array[i], property, events, result);
   }
 }
 
@@ -289,13 +285,10 @@ reader.prototype = {
     if (this.current != ']')
       throw new ParseError(this, "Unexpected character in pattern.");
 
-    var mm = {
-      min:0,
-      max:Number.MAX_VALUE
-    };
+    var mm = {};
     if (this.remaining > 0) {
       this.readQuantity(mm);
-      if (mm.max < mm.min)
+      if (!isNaN(mm.max) && !isNaN(mm.min) && mm.max < mm.min)
         throw new ParseError(this, "max is less than min");
     }
     return new propex(indexitems, true, mm.min, mm.max, writeSource? this.source : null);
@@ -303,14 +296,15 @@ reader.prototype = {
   readQuantity: function(mm) {
     var c = this.peek(1);
     if (isDigit(c)) {
-      mm.min = mm.max = this.readNumber();
+      mm.min = this.readNumber();
       if (this.remaining == 0) return;
       c = this.peek(1);
     }
 
     if (c == ':') {
       this.move(1);
-      mm.max = this.remaining != 0 && isDigit(this.peek(1)) ? this.readNumber() : Number.MAX_VALUE;
+      if(this.remaining != 0 && isDigit(this.peek(1)))
+        mm.max = this.readNumber();
     }
   },
   readIndexItems: function() {

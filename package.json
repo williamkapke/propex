@@ -6,21 +6,13 @@
   "license": "MIT",
   "main": "lib",
   "dependencies": {
-    "propex": "^4.1.1"
+    "propex": "^5.0.0"
   },
   "devDependencies": {},
   "scripts": {
-    "test": "mocha -R spec && npm run coverage",
-    "coverage": "istanbul cover node_modules/mocha/bin/_mocha",
-    "prepublish": "npm prune && linify transform bin && npm run build",
-    "build": "npm run compile",
-    "compile": "npm run compile-full && npm run compile-runtime",
-    "compile-full": "browserify ./lib/index.js --standalone jade -x ./node_modules/transformers > jade.js",
-    "compile-runtime": "browserify ./lib/runtime.js --standalone jade > runtime.js"
+    "build": "browserify -r propex > bundle.js"
   },
   "browser": {
-    "fs": false,
-    "./lib/filters.js": "./lib/filters-client.js"
   },
   "homepage": "http://propex.org"
 }
