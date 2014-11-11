@@ -1,5 +1,7 @@
+[![Build Status](https://travis-ci.org/williamwicks/propex.svg?branch=master)](https://travis-ci.org/williamwicks/propex)<br>
 [propex](http://williamwicks.github.com/propex) expressions are strings that
 describe how you want to interact with an object.
+
 
 Sound vague? That's intentional.
 
