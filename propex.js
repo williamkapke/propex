@@ -1,12 +1,10 @@
 
 //PropertyExpressions are immutable- so lets cache them.
 var cache = {};
-var undefined = cache[-1];//paranoia?
 
 
 function Propex(value) {
-  if(typeof value !== "string")
-    throw new Error("value must be a string");
+  value = (!exists(value) || value==="")? "{}" : value.toString();
 
   var ret = cache[value];
   if(ret) return ret;
@@ -24,7 +22,7 @@ Propex.prototype = {
     if (isArray && !this.isArray) throw new Error("Expected source to be an Object");
 
     function assign(property, name, value, result){
-      if(typeof property.marker === "undefined")
+      if(!exists(property.marker))
         return result[name] = value;
 
       var modifier = (modifiers && modifiers[property.marker]) || rename;
@@ -32,9 +30,12 @@ Propex.prototype = {
     }
     return this.recurse(source, {
       found: assign,
+      objectStart:function(property, key, item, result) {
+        return property.subproperties.isArray? [] : {};
+      },
       objectEnd: function(property, name, result, parent){
         var subs = property.subproperties;
-        if(subs.isArray && (typeof subs.min!=="undefined" || typeof subs.max!=="undefined"))
+        if(subs.isArray && (exists(subs.min) || exists(subs.max)))
           result = result.slice(subs.min||0,subs.max);
 
         if(name!==null) assign(property, name, result, parent);
@@ -64,7 +65,7 @@ function rename(property, name, value, target) {
 }
 function examine(key, item,  property, events, result){
   var subs = property.subproperties;
-  if(item === undefined || (subs && typeMismatch(subs.isArray, item))) {
+  if(!exists(item) || (subs && typeMismatch(subs.isArray, item))) {
     if(!property.isOptional && events.missing)
       return events.missing(property, key, result);
     return;
@@ -117,23 +118,21 @@ function typeMismatch(isArray, data){
   return (isArray && !dataIsArray) || (!isArray && dataIsArray)
 }
 //holds info about each property
-function Property(name, isOptional, subproperties, marker){
+function Property(name, marker, subproperties, isOptional){
   this.name = name;
-  this.isOptional = isOptional;
-  this.subproperties = subproperties;
-  if(typeof marker!=="undefined")
-    this.marker = marker;
+  if(exists(marker)) this.marker = marker;
+  if(exists(subproperties)) this.subproperties = subproperties;
+  if(exists(isOptional)) this.isOptional = isOptional;
 }
 
 function propex(properties, isArray, min, max, source){
   var items = this.items = {};
   //properties
-  this.min = min;
-  this.max = max;
+  if(min) this.min = min;
+  if(max) this.max = max;
   this.isArray = isArray;
   this.length = properties.length;
-  if(source) //this only happens at the top level
-    this.source = source;
+  this.source = source;
 
   if (properties) {
     properties.forEach(function(target){
@@ -142,6 +141,7 @@ function propex(properties, isArray, min, max, source){
   }
   Object.freeze(this.items);
   Object.freeze(this);
+  cache[source] = this;
 }
 propex.prototype = Propex.prototype;
 
@@ -152,195 +152,126 @@ function reader(source) {
   this.position = -1;
   this.remaining = source.length;
 
-  var result;
-  switch (source[0]) {
-    case '{':
-      result = this.readPropertyGroup(true);
-      break;
-    case '[':
-      result = this.readArrayGroup(true);
-      break;
-    default:
-      throw new Error("Pattern must start with '{' or '['", "pattern");
-  }
-  if (this.remaining != 0)
-    throw new Error("Unexpected character(s) at the end of the Propex.");
+  var result = this.readPropertyGroup() || this.readArrayGroup();
+
+  if(!result) throw new Error("Pattern must start with '{' or '['");
+  if(this.remaining) throw new Error("Unexpected character(s) at the end of the Propex.");
 
   result.source = source;
   return result;
 }
 reader.prototype = {
-  readPropertyGroup: function(writeSource) {
-    //we start here 1 character before a '{'
+  readPropertyGroup: function() {
+    //we should start here 1 character before a '{'
+    if(this.peek(1)!=='{') return;
     this.move(1);
+    var start = this.position;
     var props = this.peek(1) == '}' ? [] : this.readProperties();
     this.move(1);
 
     if (this.current != '}')
       throw new ParseError(this, "Unexpected character '" + this.current + "' in Propex.");
 
-    return new propex(props, false, 1, 1, writeSource? this.source : null);
+    var source = this.source.substring(start, this.position+1);
+    return new propex(props, false, 1, 1, source);
   },
   readProperties: function() {
-    if (this.peek(1) == '$') return [];
-    var props = [];
-    props.push(this.readProperty(this.readPropertyName()));
-    while (this.peek(1) == ',') {
+    var name = this.readPropertyName();
+    if(!name) return [];
+
+    var props = [this.readProperty(name)];
+
+    while (this.peek(1)===',') {
       this.move(1);
-      props.push(this.readProperty(this.readPropertyName()));
+      name = this.readPropertyName();
+      if(!name) throw new ParseError(this, "Property expected.");
+      props.push(this.readProperty(name));
     }
     return props;
   },
   readProperty: function(name) {
-    var isOptional = false;
-    var subproperties = null;
-    var marker = this.readMarker(name);
-    var c = this.peek(1);
-    switch (c) {
-      case '{':
-        subproperties = this.readPropertyGroup();
-        c = this.peek(1);
-        break;
-      case '[':
-        subproperties = this.readArrayGroup();
-        c = this.peek(1);
-        break;
-    }
-    if (c == '?') {
-      isOptional = true;
-      this.move(1);
-    }
-    return new Property(name, isOptional, subproperties, marker);
+    return new Property(
+      name,
+      this.readMarker(name),
+      this.readPropertyGroup() || this.readArrayGroup(),
+      !!(this.peek(1)==='?' && this.move(1)) //isOptional
+    );
   },
   readMarker:function(name) {
-    c = this.peek(1);
+    var c = this.peek(1);
     if (c !== '>' && c !== '$') return;
     this.move(1);
-    c = this.peek(1);
-    return /\w/.test(c)? this.readPropertyName(true) : name;
+    return this.readPropertyName() || name;
   },
   readIndexItem: function() {
-    return this.readProperty(this.readNumber().toString());
+    return this.readProperty(this.readPropertyName(true)||"-1");
   },
-  readNumber: function() {
-    var c;
-
-    var len = 0;
-    while (true) {
-      if (++len > this.remaining) break;
+  readPropertyName: function(digits) {
+    //this.current should be 1 character before the start of the property name
+    var c, len=0, rx=digits?/\d/:/\w/;
+    while (this.remaining - (len++)) {
       c = this.peek(len);
-      if (!isDigit(c)) break;
-    }
-    len--;
-    if (len < 1)
-      throw new ParseError(this, "Invalid Propex pattern.");
-
-    var name = this.source.substr(this.position + 1, len);
-    this.move(len);
-    return parseInt(name, 10);
-  },
-  readPropertyName: function(allowNumbers) {
-    if (!allowNumbers && !isValidFirstChar(this.peek(1)))
-      throw new ParseError(this, "Unexpected character '" + c + "' in Propex.");
-
-    var c,len = 1;
-    while (true) {
-      c = this.peek(++len);
-      if (!/\w/.test(c)) break; // [a-zA-Z0-9_]
+      if (!rx.test(c)) break; // [a-zA-Z0-9_]
     }
     len--;
     var name = this.source.substr(this.position + 1, len);
     this.move(len);
     return name;
   },
-  readArrayGroup: function(writeSource) {
+  readArrayGroup: function() {
     //we start here 1 character before a '['
+    if(this.peek(1)!=='[') return;
     this.move(1);
-    var c = this.peek(1);
-    var indexitems = [];
+    var start = this.position;
+    var indexitems = this.readIndexItems();
 
-    if (c == '{') {
-      indexitems.push(new Property("-1", false, this.readPropertyGroup()));
-      c = this.peek(1);
-      if (c == ',') {
-        this.move(1);
-        c = this.peek(1);
-      }
-      else if(c!==']')
-        throw new ParseError(this, "Unexpected character in pattern.");
-    }
-    else if (c == '[') {
-      indexitems.push(new Property("-1", false, this.readArrayGroup()));
-      c = this.peek(1);
-      if (c == ',') {
-        this.move(1);
-        c = this.peek(1);
-      }
-      else if(c!==']')
-        throw new ParseError(this, "Unexpected character in pattern.");
-    }
+    if (this.move(1) != ']')
+      throw new ParseError(this, "Unexpected character.");
 
-    if (isDigit(c))
-      indexitems.push.apply(indexitems, this.readIndexItems());
-
-    this.move(1);
-
-    if (this.current != ']')
-      throw new ParseError(this, "Unexpected character in pattern.");
-
-    var mm = {};
     if (this.remaining > 0) {
-      this.readQuantity(mm);
-      if (!isNaN(mm.max) && !isNaN(mm.min) && mm.max < mm.min)
-        throw new ParseError(this, "max is less than min");
+      var min = this.readPropertyName(true);
+      if(this.remaining > 0 && this.peek(1)===':') this.move(1);
+      var max = this.readPropertyName(true);
+      if (exists(min) && exists(max) && parseInt(max,10) < parseInt(min,10))
+        throw new ParseError(this, "The max value cannot be less than the min value.");
     }
-    return new propex(indexitems, true, mm.min, mm.max, writeSource? this.source : null);
-  },
-  readQuantity: function(mm) {
-    var c = this.peek(1);
-    if (isDigit(c)) {
-      mm.min = this.readNumber();
-      if (this.remaining == 0) return;
-      c = this.peek(1);
-    }
-
-    if (c == ':') {
-      this.move(1);
-      if(this.remaining != 0 && isDigit(this.peek(1)))
-        mm.max = this.readNumber();
-    }
+    var source = this.source.substring(start, this.position+1);
+    return new propex(indexitems, true, min, max, source);
   },
   readIndexItems: function() {
     var props = [];
     props.push(this.readIndexItem());
     while (this.peek(1) == ',') {
       this.move(1);
+      if(!isDigit(this.peek(1)))
+        throw new ParseError(this, "Number expected");
       props.push(this.readIndexItem());
     }
     return props;
   },
   peek: function(count) {
-    if (count > this.remaining)
-      throw new ParseError(this, "Unexpected end of pattern.");
     return this.source[this.position + count];
   },
   move: function(count) {
-    if (count == 0) return;
-    if (count > this.remaining)
-      throw new ParseError(this, "Unexpected end of pattern.");
+    if (count == 0) return this.current;
 
     this.remaining -= count;
     this.position += count;
-    this.current = this.source[this.position];
+    return this.current = this.source[this.position];
   }
 };
 
 //these are only here to provide semantics about their operation
 function isDigit(c) { return /\d/.test(c); }
-function isValidFirstChar(c) { return /[a-zA-Z_]/.test(c); }
+function exists(x) {
+  return typeof x !== "undefined";
+}
 
 function ParseError(ctx, message){
-  this.message = message+"\nposition: "+ctx.position+"\ncharacter: '"+ctx.current+"'\n";
+  Error.captureStackTrace(this, ParseError);
+  this.message = message+" position:"+ctx.position+" character:'"+ctx.current+"'";
+  this.position = ctx.position;
+  this.character = ctx.current;
 }
 ParseError.prototype = Error.prototype;
 
