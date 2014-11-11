@@ -9,14 +9,14 @@
     "copy",
     "clone"
   ],
-  "homepage": "http://github.com/williamwicks/propex",
+  "homepage": "http://github.com/williamkapke/propex",
   "repository": {
     "type": "git",
-    "url": "git@github.com:williamwicks/propex.git"
+    "url": "git@github.com:williamkapke/propex.git"
   },
   "author": {
-    "name": "William Wicks",
-    "email": "wjwicks@gmail.com"
+    "name": "William Kapke",
+    "email": "william.kapke@gmail.com"
   },
   "devDependencies": {
     "mocha": "^2.0.1",
