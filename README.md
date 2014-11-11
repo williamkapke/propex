@@ -1,4 +1,4 @@
-[![GitHub version](https://badge.fury.io/gh/williamkapke%2Fpropex.svg)](http://badge.fury.io/gh/williamkapke%2Fpropex)[![Build Status](https://travis-ci.org/williamkapke/propex.svg?branch=master)](https://travis-ci.org/williamkapke/propex)<br>
+[![Build Status](https://travis-ci.org/williamkapke/propex.svg?branch=master)](https://travis-ci.org/williamkapke/propex)<br>
 [propex](https://github.com/williamkapke/propex) expressions are strings that
 describe how you want to interact with an object.
 
