@@ -8,20 +8,20 @@
     ga('create', 'UA-56551457-1', 'auto');
     ga('send', 'pageview');
   </script>
-  <link href='http://fonts.googleapis.com/css?family=Source+Code+Pro|Source+Sans+Pro:700' rel='stylesheet' type='text/css'>
+  <link href='http://fonts.googleapis.com/css?family=Source+Code+Pro:400,700' rel='stylesheet' type='text/css'>
   <style>
     .clearfix:before,.clearfix:after { content: " "; display: table; }
     .clearfix:after { clear: both; }
 
-    h1,h2{font-family: 'Source Sans Pro', sans-serif; font-weight: 700;}
-    #input,body{font-size:14px;}
+    /*h1,h2{font-family: 'Source Sans Pro', sans-serif; font-weight: 700;}*/
+    #input,body{font-size:14px;font-family: 'Source Code Pro', sans-serif;}
     header{text-align:center; margin-bottom:30px;}
-    header>h1{margin:0;font-size:2.5em;}
+    header>h1{margin:0;font-size:3.5em;}
     article {width:960px;margin:0 auto 30px;}
     #input,article>pre {border: solid 1px #000;}
     article>h2 {text-align: center;}
     #input,#target,#output{font-family: 'Source Code Pro', Courier, "Courier New", sans-serif}
-    #input{display:block; width:100%; padding:10px; margin-bottom:30px;}
+    #input{display:block; width:940px; padding:10px; margin-bottom:30px;}
     #target,#output{height:400px;}
     #target,#output,article>h2{width:450px;float:left;margin:0 0 0 28px}
     #target,article>h2:first-of-type{margin:0 28px 0 0}
@@ -29,13 +29,13 @@
 </head>
 <body>
 <header role="banner">
-  <h1>Propex</h1>
-  <small>(Property Expressions)</small>
+  <h1>propex</h1>
+  <small style="margin-top:-2px;  letter-spacing:-.5px; display: block;">{property,expressions[4{the,win}]}</small>
 </header>
 <article class="clearfix">
   <input id="input" value="{cat?,dog,things[{_id>XXXX,name}]2?}">
-  <h2>Your Data</h2>
-  <h2>The Output</h2>
+  <h2>your data</h2>
+  <h2>the output</h2>
   <pre id="target">
 {
   "cat": "RU",
