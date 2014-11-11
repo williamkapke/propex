@@ -19,6 +19,7 @@
     "email": "wjwicks@gmail.com"
   },
   "devDependencies": {
+    "mocha": "^2.0.1",
     "should": "^4.2.1"
   },
   "main": "propex",
@@ -37,7 +38,7 @@
     }
   },
   "scripts": {
-    "test": "mocha -R spec",
-    "coverage": "mocha --require blanket -R html-cov > coverage.html"
+    "test": "./node_modules/.bin/mocha -R spec",
+    "coverage": "./node_modules/.bin/mocha --require blanket -R html-cov > coverage.html"
   }
 }
