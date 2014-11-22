@@ -269,7 +269,7 @@ function exists(x) {
 
 function ParseError(ctx, message){
   Error.captureStackTrace(this, ParseError);
-  this.message = message+" position:"+ctx.position+" character:'"+ctx.current+"'";
+  this.message = message;
   this.position = ctx.position;
   this.character = ctx.current;
 }
