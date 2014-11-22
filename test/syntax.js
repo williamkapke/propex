@@ -11,6 +11,20 @@ describe("Propex",function() {
     "source":"{}"
   };
 
+  //a helper to
+  error("[]5:3", "The max value cannot be less than the min value.", 4, '3');
+  function error(px, msg, position, character) {
+    try{
+      Px(px);
+      should.fail;
+    }
+    catch(e){
+      e.message.should.eql(msg);
+      e.position.should.eql(position);
+      e.character.should.eql(character);
+    }
+  }
+
   describe("Root object",function() {
     it("should default to '{}'",function() {
       Px().should.eql(default_ast);
@@ -77,10 +91,10 @@ describe("Propex",function() {
       );
     });
     it("should ensure the proper end of an object",function() {
-      (function() { Px("{one!}"); }).should.throw("Unexpected character '!' in Propex. position:4 character:'!'");
+      error("{one!}", "Unexpected character '!' in Propex.", 4, '!');
     });
     it("should ensure non-empty Property Name",function() {
-      (function() { Px("{one,,three}"); }).should.throw("Property expected. position:4 character:','");
+      error("{one,,three}", "Property expected.", 4, ',');
     });
   });
   describe("Arrays",function() {
@@ -140,11 +154,11 @@ describe("Propex",function() {
       });
     });
     it("should ensure the array ends properly",function() {
-      (function() { Px("[{one}!]"); }).should.throw("Unexpected character. position:6 character:'!'");
+      error("[{one}!]", "Unexpected character.", 6, '!');
     });
     it("should require a numbered index trailing the default definition",function() {
 
-      (function() { Px("[{one},{one}]"); }).should.throw("Number expected position:6 character:','");
+      error("[{one},{one}]", "Number expected", 6, ',');
 
       var px = Px("[{x},9]");
       px.should.eql({
@@ -206,7 +220,7 @@ describe("Propex",function() {
       });
     });
     it("should ensure the array ends properly",function() {
-      (function() { Px("[]5:3"); }).should.throw("The max value cannot be less than the min value. position:4 character:'3'");
+      error("[]5:3", "The max value cannot be less than the min value.", 4, '3');
     });
   });
   describe("Meta Markers",function() {
