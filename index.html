@@ -4,9 +4,11 @@
   <title>Propex - Property Exporessions</title>
   <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=yes"/>
   <script>
-    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-    ga('create', 'UA-56551457-1', 'auto');
-    ga('send', 'pageview');
+    if(location.protocol!=="file:"){
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+      ga('create', 'UA-56551457-1', 'auto');
+      ga('send', 'pageview');
+    }
   </script>
   <link href='http://fonts.googleapis.com/css?family=Source+Code+Pro:400,700' rel='stylesheet' type='text/css'>
   <style>
@@ -18,12 +20,13 @@
     header{text-align:center; margin-bottom:30px;}
     header>h1{margin:0;font-size:3.5em;}
     article {width:960px;margin:0 auto 30px;}
-    #input,article>pre {border: solid 1px #000;}
+    #input {border: solid 1px #000;}
+    #target,#output {border:0; padding:2px; background-color: #eee}
     article>h2 {text-align: center;}
     #input,#target,#output{font-family: 'Source Code Pro', Courier, "Courier New", sans-serif}
     #input{display:block; width:940px; padding:10px; margin-bottom:30px;}
     #target,#output{height:400px;}
-    #target,#output,article>h2{width:450px;float:left;margin:0 0 0 28px}
+    #target,#output,article>h2{width:448px;float:left;margin:0 0 0 28px}
     #target,article>h2:first-of-type{margin:0 28px 0 0}
   </style>
 </head>
@@ -36,7 +39,7 @@
   <input id="input" value="{cat?,dog,things[{_id>XXXX,name}]2?}">
   <h2>your data</h2>
   <h2>the output</h2>
-  <pre id="target">
+  <textarea id="target">
 {
   "cat": "RU",
   "things": [
@@ -58,15 +61,18 @@
     }
   ]
 }
-  </pre>
+  </textarea>
   <pre id="output"></pre>
 </article>
 <footer style="text-align:center;">&copy; 2014 William Kapke</footer>
 
 <script src="bundle.js"></script>
 <script>
+  var current_value;
+  var current_propex;
   function getData() {
-    try{ return JSON.parse(target.innerHTML);}
+    current_value = target.value;
+    try{ return JSON.parse(target.value); }
     catch(e){}
   }
 
@@ -75,19 +81,22 @@
   }
 
   var _Px = require('propex');
-  function Px(source) {
-    try{ return _Px(source); }
+  function Px() {
+    current_propex = input.value;
+    try{ return _Px(current_propex); }
     catch(e){ return e; }
   }
   function update(){
-    var px = Px(input.value);
+    if(current_propex === input.value && current_value === target.value) return;
+    var px = Px();
     if(px instanceof Error)
-      return output.innerHTML = px.toString();
+      return output.innerHTML = px+"\nCharacter:'"+px.character+"'" +"\nIndex: "+px.position;
     var data = getData();
     if(!data) return;
     output.innerHTML = JSON.stringify(px.copy(data),grr,2).replace(/"\\u0000"/g,'undefined')
   }
   input.addEventListener("keyup", update);
+  target.addEventListener("keyup", update);
   update();
 </script>
 </body>
