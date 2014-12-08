@@ -16,18 +16,21 @@
     .clearfix:after { clear: both; }
 
     /*h1,h2{font-family: 'Source Sans Pro', sans-serif; font-weight: 700;}*/
-    #input,body{font-size:14px;font-family: 'Source Code Pro', sans-serif;}
+    #input,body,textarea{font-size:14px;font-family: 'Source Code Pro', sans-serif;}
     header{text-align:center; margin-bottom:30px;}
     header>h1{margin:0;font-size:3.5em;}
     article {width:960px;margin:0 auto 30px;}
-    #input {border: solid 1px #000;}
-    #target,#output {border:0; padding:2px; background-color: #eee}
+    #input {border: solid 1px #000;  background-color: #fdfdfd}
     article>h2 {text-align: center;}
-    #input,#target,#output{font-family: 'Source Code Pro', Courier, "Courier New", sans-serif}
+    #input,#target,#output,#handlers,#code{font-family: 'Source Code Pro', Courier, "Courier New", sans-serif}
     #input{display:block; width:940px; padding:10px; margin-bottom:30px;}
-    #target,#output{height:400px;}
-    #target,#output,article>h2{width:448px;float:left;margin:0 0 0 28px}
-    #target,article>h2:first-of-type{margin:0 28px 0 0}
+    #target,#output,#handlers,#code{min-height:400px;}
+
+    #target,#handlers,article>h2:nth-of-type(odd){width:446px; float:left; margin:0}
+    #target,#handlers {border:1px outset; padding:2px; background-color: #fdfdfd}
+
+    #output,#code,article>h2:nth-of-type(even){width:448px; float:left; margin:0}
+    #output,#code {padding:2px 30px;}
   </style>
 </head>
 <body>
@@ -36,7 +39,7 @@
   <small style="margin-top:-2px;  letter-spacing:-.5px; display: block;">{property,expressions[4{the,win}]}</small>
 </header>
 <article class="clearfix">
-  <input id="input" value="{cat?,dog,things[{_id>XXXX,name}]2?}">
+  <input id="input" value="{cat?,dog,things[$index{_id>id,name}]1?}">
   <h2>your data</h2>
   <h2>the output</h2>
   <textarea id="target">
@@ -45,11 +48,11 @@
   "things": [
     {
       "_id": "4e7e98",
-      "name": "Tom"
+      "name": "William"
     },
     {
       "_id": "d8cc60",
-      "name": "Alissa"
+      "name": "Tom"
     },
     {
       "_id": "03f5c2",
@@ -63,21 +66,38 @@
 }
   </textarea>
   <pre id="output"></pre>
+<hr class="clearfix" style="float:left;width:100%;margin-top:20px;">
+  <h2>handlers</h2>
+  <h2>nodejs code</h2>
+  <textarea id="handlers">return {
+  index: function(prop,name,value,obj){
+    obj[name] = prop.subproperties.copy(value)
+    obj[name].index = name;
+  }
+};</textarea>
+  <pre id="code"></pre>
+
 </article>
 <footer style="text-align:center;">&copy; 2014 William Kapke</footer>
 
 <script src="bundle.js"></script>
 <script>
-  var current_value;
+  var current_data;
   var current_propex;
+  var current_handlers;
   function getData() {
-    current_value = target.value;
+    current_data = target.value;
     try{ return JSON.parse(target.value); }
     catch(e){}
   }
 
   function grr(n,value){
     return value===undefined? "\0":value;
+  }
+  function getHandlers(){
+    current_handlers = handlers.value;
+    try{ return Function(current_handlers)(); }
+    catch(e){ }
   }
 
   var _Px = require('propex');
@@ -87,16 +107,26 @@
     catch(e){ return e; }
   }
   function update(){
-    if(current_propex === input.value && current_value === target.value) return;
+    if(current_propex === input.value && current_data === target.value && current_handlers === handlers.value) return;
     var px = Px();
     if(px instanceof Error)
       return output.innerHTML = px+"\nCharacter:'"+px.character+"'" +"\nIndex: "+px.position;
     var data = getData();
     if(!data) return;
-    output.innerHTML = JSON.stringify(px.copy(data),grr,2).replace(/"\\u0000"/g,'undefined')
+    var hndlrs = getHandlers();
+    code.innerHTML = [
+      'var Px = require("propex");',
+      'var px = Px("'+px+'");',
+      "function getHandlers(){\n  "+ (hndlrs? current_handlers.replace(/\n/g,'\n  ') : '')+"\n}",
+      "var data = " + JSON.stringify(data,null,2)+";",
+      "var output = px.copy(data, getHandlers());",
+      "console.log(output);"
+    ].join('\n');
+    output.innerHTML = JSON.stringify(px.copy(data, hndlrs),grr,2).replace(/"\\u0000"/g,'undefined')
   }
   input.addEventListener("keyup", update);
   target.addEventListener("keyup", update);
+  handlers.addEventListener("keyup", update);
   update();
 </script>
 </body>
