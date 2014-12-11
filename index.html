@@ -71,8 +71,11 @@
   <h2>nodejs code</h2>
   <textarea id="handlers">return {
   index: function(prop,name,value,obj){
-    obj[name] = prop.subproperties.copy(value)
+    obj[name] = value; //already transformed
     obj[name].index = name;
+  },
+  name: function(prop,name,value,obj){
+    obj[name] = value.name;
   }
 };</textarea>
   <pre id="code"></pre>
