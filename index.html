@@ -92,19 +92,19 @@
   }
   function getHandlers(){
     current_handlers = handlers.value;
-    try{ return Function(current_handlers)(); }
+    try{ return Function("return "+current_handlers)(); }
     catch(e){ }
   }
 
-  var _Px = require('propex');
-  function Px() {
+  var Px = require('propex');
+  function tryPx() {
     current_propex = input.value;
-    try{ return _Px(current_propex); }
+    try{ return Px(current_propex); }
     catch(e){ return e; }
   }
   function update(){
     if(current_propex === input.value && current_data === target.value && current_handlers === handlers.value) return;
-    var px = Px();
+    var px = tryPx();
     if(px instanceof Error)
       return output.innerHTML = px+"\nCharacter:'"+px.character+"'" +"\nIndex: "+px.position;
     var data = getData();
@@ -113,9 +113,8 @@
     code.innerHTML = [
       'var Px = require("propex");',
       'var px = Px("'+px+'");',
-      "function getHandlers(){\n  "+ (hndlrs? current_handlers.replace(/\n/g,'\n  ') : '')+"\n}",
       "var data = " + JSON.stringify(data,null,2)+";",
-      "var output = px.copy(data, getHandlers());",
+      "var output = px.copy(data"+(hndlrs? ", "+current_handlers : '')+");",
       "console.log(output);"
     ].join('\n');
     output.innerHTML = JSON.stringify(px.copy(data, hndlrs),grr,2).replace(/"\\u0000"/g,'undefined')
@@ -128,11 +127,11 @@
   }
   function populate(example) {
     input.value = example.px;
-    target.innerHTML = JSON.stringify(example.data, null, 2);
+    target.value = JSON.stringify(example.data, null, 2);
     if(example.handlers)
-      handlers.innerHTML = example.handlers.toString().replace("function () {\n","").replace(/\n[\s]+}$/,"").replace(/        /g,"");
+      handlers.value = example.handlers.toString().replace("function () {\n","").replace("return ","").replace(/\n[\s]+}$/,"").replace(/        /g,"");
     else
-      handlers.innerHTML = "";
+      handlers.value = "";
     update();
   }
 
@@ -142,20 +141,24 @@
       px: "{cat,dog,oops}",
       data:{
         "cat": "RU",
-        "dog": "fido"
+        "dog": "fido",
+        "fish": "scales",
+        "bird": "polly"
       }
     },
     optional: {
       description: "'?' lets properties be optional",
-      px: "{cat,dog,fish?}",
+      px: "{cat,dog,bunny?}",
       data:{
         "cat": "RU",
-        "dog": "fido"
+        "dog": "fido",
+        "fish": "scales",
+        "bird": "polly"
       }
     },
     array_rename: {
       description: "Use the '>' flag to rename properties",
-      px: "[{_id>id,name}]",
+      px: "[{_id>user_id,name}]",
       data:[
         { "_id": "4e7e98", "name": "William", "rank": 38 },
         { "_id": "d8cc60", "name": "Tom", "rank": 88 },
@@ -165,7 +168,7 @@
     },
     array_augment: {
       description: "Use a handler to add an index property",
-      px: "[$index{_id>id,name}]",
+      px: "[$index{_id>user_id,name}]",
       data:[
         { "_id": "4e7e98", "name": "William" },
         { "_id": "d8cc60", "name": "Tom" },
@@ -178,7 +181,7 @@
             value.index = index;
             result[index] = value;
           }
-        };
+        }
       }
     },
     array_map: {
@@ -195,7 +198,7 @@
           name:function(prop, index, value, result) {
             result.push(value.name);
           }
-        };
+        }
       }
     },
     array_slice: {
@@ -226,7 +229,7 @@
             value.index = index;
             result[index] = value; //already transformed
           }
-        };
+        }
       }
     }
   };
@@ -245,9 +248,10 @@
   window.addEventListener("hashchange", hashchange);
   example_list.addEventListener("click", function(e){
     var tr = e.target;
-    while(tr.tagName!=="TR" && tr!==document.body)
+    while(tr.tagName!=="TR") {
+      if(tr===document.body) return;
       tr = tr.parentNode;
-    console.log(tr);
+    }
     populate(examples[tr.id]);
   });
 
