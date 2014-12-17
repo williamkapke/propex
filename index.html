@@ -174,9 +174,9 @@
       ],
       handlers:function() {
         return {
-          index:function(prop, name, value, obj) {
-            obj[name] = value; //already transformed
-            obj[name].index = name;
+          index:function(prop, index, value, result) {
+            value.index = index;
+            result[index] = value;
           }
         };
       }
@@ -192,8 +192,8 @@
       ],
       handlers:function() {
         return {
-          name:function(prop, name, value, obj) {
-            obj[name] = value.name;
+          name:function(prop, index, value, result) {
+            result.push(value.name);
           }
         };
       }
@@ -222,9 +222,9 @@
       },
       handlers:function() {
         return {
-          index:function(prop, name, value, obj) {
-            obj[name] = value; //already transformed
-            obj[name].index = name;
+          index:function(prop, index, value, result) {
+            value.index = index;
+            result[index] = value; //already transformed
           }
         };
       }
