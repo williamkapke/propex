@@ -1,6 +1,6 @@
 {
   "name": "propex",
-  "version": "5.0.3",
+  "version": "5.0.4",
   "description": "Describe objects with Property Expressions!",
   "keywords": [
     "propex",
@@ -12,7 +12,7 @@
   "homepage": "http://github.com/williamkapke/propex",
   "repository": {
     "type": "git",
-    "url": "git@github.com:williamkapke/propex.git"
+    "url": "https://github.com/williamkapke/propex.git"
   },
   "author": {
     "name": "William Kapke",

@@ -50,7 +50,7 @@ console.log(px.copy(users));
 
 ## What is this for?
 - [Deep Copying Objects](#lets-be-picky-very-picky)
-- [Validating JSON objects](https://github.com/williamwicks/propex-validation)
+- [Validating JSON objects](https://github.com/williamkapke/propex-validation)
 - Specifing batch objects that retrieved from web services.
 - Specifing columns returned from a database- and even that sub tables to be joined and merged
 
@@ -230,9 +230,9 @@ console.log(JSON.stringify(result));
 ```
 
 ##Examining objects
-A [propex](http://williamwicks.github.com/propex) object has a `recurse(obj, events)`
+A [propex](http://williamkapke.github.com/propex) object has a `recurse(obj, events)`
 function that allows you to examine an object as it is applied to the
-[propex](http://williamwicks.github.com/propex).
+[propex](http://williamkapke.github.com/propex).
 
 Although the `recurse(obj, events)` uses a concept of *events*- there is no
 `EventEmitter` involved since I haven't found a case where async eventing was
