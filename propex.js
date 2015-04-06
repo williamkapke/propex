@@ -128,8 +128,8 @@ function Property(name, marker, subproperties, isOptional){
 function propex(properties, isArray, min, max, source){
   var items = this.items = {};
   //properties
-  if(min) this.min = min;
-  if(max) this.max = max;
+  if(min) this.min = parseInt(min, 10);
+  if(max) this.max = parseInt(max, 10);
   this.isArray = isArray;
   this.length = properties.length;
   this.source = source;
