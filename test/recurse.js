@@ -11,12 +11,19 @@ describe("Recurse/Copy", function() {
     ],
     c: {z:1,zz:2}
   };
-  it("should deep copy objects",function() {
+  it("should deep copy objects (starting with an object)",function() {
     Px("{a{x},b[{y}],c{z}}").copy(data).should.eql({
       a:{x:1},
       b:[{y:1},{y:3},{y:5}],
       c:{z:1}
     });
+  });
+  it("should deep copy objects (starting with an array)",function() {
+    Px("[{y},1{yyy}]").copy(data.b).should.eql([
+      {y:1},
+      {yyy:0},
+      {y:5}
+    ]);
   });
   it("should rename properties",function() {
     Px("{a>w}").copy(data).should.eql({
@@ -30,13 +37,6 @@ describe("Recurse/Copy", function() {
     Px("[]:1").copy(data.b).should.eql([{ y: 1, yy: 2 }]);
     Px("[]1:2").copy(data.b).should.eql([{ y: 3, yy: 4, yyy: 0 }]);
     Px("[]2").copy(data.b).should.eql([{ y: 5, yy: 6 }]);
-  });
-  it("should deep copy objects",function() {
-    Px("[{y},1{yyy}]").copy(data.b).should.eql([
-      {y:1},
-      {yyy:0},
-      {y:5}
-    ]);
   });
   it("should copy optional properties if they exist",function() {
     Px("[{y,yyy?}]").copy(data.b).should.eql([

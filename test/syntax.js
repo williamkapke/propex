@@ -187,14 +187,14 @@ describe("Propex",function() {
         isArray: true,
         items: { '-1': { isOptional: false, name: '-1' } },
         length: 1,
-        min: '3',
+        min: 3,
         source: '[]3'
       });
       Px("[]3:").should.eql({
         isArray: true,
         items: { '-1': { isOptional: false, name: '-1' } },
         length: 1,
-        min: '3',
+        min: 3,
         source: '[]3:'
       });
     });
@@ -204,8 +204,8 @@ describe("Propex",function() {
         isArray: true,
         items: { '-1': { isOptional: false, name: '-1' } },
         length: 1,
-        min: '3',
-        max: '5',
+        min: 3,
+        max: 5,
         source: '[]3:5'
       });
     });
@@ -215,7 +215,7 @@ describe("Propex",function() {
         isArray: true,
         items: { '-1': { isOptional: false, name: '-1' } },
         length: 1,
-        max: '5',
+        max: 5,
         source: '[]:5'
       });
     });

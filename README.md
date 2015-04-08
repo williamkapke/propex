@@ -230,65 +230,8 @@ console.log(JSON.stringify(result));
 ```
 
 ##Examining objects
-A [propex](http://williamkapke.github.com/propex) object has a `recurse(obj, events)`
-function that allows you to examine an object as it is applied to the
-[propex](http://williamkapke.github.com/propex).
-
-Although the `recurse(obj, events)` uses a concept of *events*- there is no
-`EventEmitter` involved since I haven't found a case where async eventing was
-useful and/or desired. If needed a wrapper function would be very easy to create.
-
-### Copy Example
-Here is an example taken from the `propex.copy(obj)` utility:
-```javascript
-var depth = 0;
-var Px = require("propex");
-var propex = Px("{baz{cat[{sound}]}}");
-var test = {foo:8, bar: false, baz:{ dog:"bark", cat:[{type:"lion",sound:"rawr"},{type:"house",sound:"meow"}]}};
-var tabs='\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t';
-
-var result = propex.recurse(test, {
-  found: function(property, name, value, context){
-    console.log("found",tabs.substr(0, depth), name, value, property.name);
-    context[name] = value;
-  },
-  objectStart: function(property, name, item, context){
-    console.log("start",tabs.substr(0, depth++), name);
-    //it actually will do this automatically if you don't return anything...
-    return Array.isArray(item)? [] : {};
-  },
-  objectEnd: function(property, name, item, context){
-    console.log("end",tabs.substr(0, --depth), name);
-
-    //it will be null at the root level
-    if(name!==null)
-      context[name] = item;
-    //return the final product!
-    else return item;
-  }
-});
-console.log(result);
-```
-
-### event: objectStart(property, key, item, context)
-Called everytime a sub-object is found and will be recursively examined. Heads
-up: the sub-object may be an Array!
-
-You must return a context that you want for the sub-items.
-
-### event: objectEnd(property, key, item, context)
-Called everytime a sub-object has finished being examined.
-
-`key` will be null at the root level.
-
-### event: found(property, key, item, context)
-Called when a key/value has been found.
-
-### event: missing(property, key, context)
-Called when a key/value is missing and the property is not maked as optional.
-
-It will also be called if not optional and the value is an array, but the propex
-is expecting an object... or vice versa.
+A [propex](http://williamkapke.github.com/propex) object has a `recurse(callback[, context])`
+function iterates over the propex calling the callback for each item.
 
 ## propex.fields()
 You can get a (mongo style 'fields' projection)[http://docs.mongodb.org/manual/tutorial/project-fields-from-query-results/#return-specified-fields-only]
