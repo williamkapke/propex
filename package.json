@@ -6,7 +6,7 @@
   "license": "MIT",
   "main": "lib",
   "dependencies": {
-    "propex": "^5.0.3"
+    "propex": "^6.0.0"
   },
   "devDependencies": {},
   "scripts": {

@@ -22,35 +22,52 @@ Propex.prototype = {
     if (this.isArray && !isArray) throw new Error("Expected source to be an Array");
     if (isArray && !this.isArray) throw new Error("Expected source to be an Object");
 
-    function assign(property, name, value, result){
+    function assign(key, value, target, property){
       if(!exists(property.marker))
-        return result[name] = value;
+        return target[key] = value;
 
       var modifier = (modifiers && modifiers[property.marker]) || rename;
-      modifier(property, name, value, result);
+      modifier(property, key, value, target);
     }
-    return this.recurse(source, {
-      found: assign,
-      objectStart:function(property, key, item, result) {
-        return property.subproperties.isArray? [] : {};
-      },
-      objectEnd: function(property, name, result, parent){
-        var subs = property.subproperties;
-        if(subs.isArray && (exists(subs.min) || exists(subs.max)))
-          result = result.slice(subs.min||0,subs.max);
+    function copy(property, key) {
+      if(typeof key === 'number' && key > this.data.length-1)
+        return true; //end of array
 
-        if(name!==null) assign(property, name, result, parent);
-
-        return result
-      },
-      missing: function(property, name, context){
-        assign(property, name, undefined, context);
+      var item = this.data[key];
+      if(typeof item === 'undefined'){
+        if(!property.isOptional)
+          assign(key, undefined, this.result, property);
+        return;
       }
-    });
+
+      var subs = property.subproperties;
+      if(subs) {
+        item = subs.recurse(copy, { data:item, result: subs.isArray?[]:{}}).result;
+        if(subs.isArray && (exists(subs.min) || exists(subs.max)))
+          item = item.slice(subs.min || 0, subs.max);
+      }
+      assign(key, item, this.result, property);
+    }
+    var result = this.recurse(copy, {data:source, result:isArray?[]:{}}).result;
+
+    if(this.isArray && (exists(this.min) || exists(this.max)))
+      result = result.slice(this.min || 0, this.max);
+    return result;
   },
-  recurse: function(obj, events, result){
-    var property = { name:null, isOptional:false, subproperties:this };
-    return examine(null, obj, property, events, result);
+  recurse: function(cb, context){
+    var items = this.items;
+    if(this.isArray && items['-1']){
+      var l = this.max? this.max : Number.MAX_SAFE_INTEGER;
+
+      for(var i=0;i<l;i++){
+        var property = items[i] || items['-1'] || {isOptional:false};
+        if(cb.call(context, property, i)) break;
+      }
+    }
+    else Object.keys(items).forEach(function (key) {
+      cb.call(context, items[key], key);
+    });
+    return context;
   },
   fields: function() {
     var out = {};
@@ -64,60 +81,7 @@ Propex.prototype = {
 function rename(property, name, value, target) {
   target[property.marker] = value;
 }
-function examine(key, item,  property, events, result){
-  var subs = property.subproperties;
-  if(!exists(item) || (subs && typeMismatch(subs.isArray, item))) {
-    if(!property.isOptional && events.missing)
-      return events.missing(property, key, result);
-    return;
-  }
 
-  if(subs) {
-    if(events.objectStart)
-      var sub_result = events.objectStart(property, key, item, result);
-
-    if(item!==null) {
-      if(subs.isArray)
-        examineArray(item, subs, events, sub_result || (sub_result=[]));
-      else
-        examineObject(item, subs, events, sub_result || (sub_result={}));
-    }
-
-    if(events.objectEnd)
-      //allow objectEnd to generate a completely new result, or just return the result obj
-      sub_result = events.objectEnd(property, key, sub_result, result) || result;
-
-    return sub_result;
-  }
-  else {
-    if(events.found) events.found(property, key, item, result);
-  }
-}
-function examineObject(obj, propex, events, result){
-  var pxi = propex.items;
-  var keys = Object.keys(pxi);
-  for(var i=0;i<keys.length;i++){
-    var key = keys[i];
-    examine(key, obj[key], pxi[key], events, result);
-  }
-}
-function examineArray(array, propex, events, result){
-  var defaultProperty = propex.items["-1"];
-  var pxItems = propex.items;
-  var property;
-  var l = propex.max? propex.max : array.length;
-  var i = 0;
-
-  for(;i<l;i++){
-    property = pxItems[i] || defaultProperty || {isOptional:false};
-    examine(i, array[i], property, events, result);
-  }
-}
-
-function typeMismatch(isArray, data){
-  var dataIsArray = Array.isArray(data);
-  return (isArray && !dataIsArray) || (!isArray && dataIsArray)
-}
 //holds info about each property
 function Property(name, marker, subproperties, isOptional){
   this.name = name;
@@ -129,8 +93,8 @@ function Property(name, marker, subproperties, isOptional){
 function propex(properties, isArray, min, max, source){
   var items = this.items = {};
   //properties
-  if(min) this.min = min;
-  if(max) this.max = max;
+  if(exists(min)) this.min = parseInt(min, 10);
+  if(exists(max)) this.max = parseInt(max, 10);
   this.isArray = isArray;
   this.length = properties.length;
   this.source = source;
@@ -230,9 +194,9 @@ reader.prototype = {
       throw new ParseError(this, "Unexpected character.");
 
     if (this.remaining > 0) {
-      var min = this.readPropertyName(true);
+      var min = this.readPropertyName(true) || undefined;
       if(this.remaining > 0 && this.peek(1)===':') this.move(1);
-      var max = this.readPropertyName(true);
+      var max = this.readPropertyName(true) || undefined;
       if (exists(min) && exists(max) && parseInt(max,10) < parseInt(min,10))
         throw new ParseError(this, "The max value cannot be less than the min value.");
     }
