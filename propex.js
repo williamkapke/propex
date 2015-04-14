@@ -1,6 +1,7 @@
 
 //PropertyExpressions are immutable- so lets cache them.
 var cache = {};
+var MAX_SAFE_INTEGER = Math.pow(2, 53) - 1;
 
 
 function Propex(value) {
@@ -56,7 +57,7 @@ Propex.prototype = {
   recurse: function(cb, context){
     var items = this.items;
     if(this.isArray && items['-1']){
-      var l = this.max? this.max : Number.MAX_SAFE_INTEGER;
+      var l = this.max? this.max : MAX_SAFE_INTEGER;
 
       for(var i=0;i<l;i++){
         var property = items[i] || items['-1'] || {isOptional:false};
