@@ -1,31 +1,14 @@
 [![Build Status](https://travis-ci.org/williamkapke/propex.svg?branch=master)](https://travis-ci.org/williamkapke/propex)<br>
+Checkout [propex.org](http://propex.org) for a live demo!
+
 [propex](https://github.com/williamkapke/propex) expressions are strings that
 describe how you want to interact with an object.
-
 
 Sound vague? That's intentional.
 
 A Propex object provides an Abstract Syntax Tree (AST) of the expression parsed
 from the string. [What you choose to do with that AST](#what-is-this-for) is
 completely up-to-you.
-
-# Technical definition
-```
-PROPERTYGROUP / ARRAYGROUP
-PROPERTYGROUP = '{' *PROPERTIES '}'
-ARRAYGROUP    = '[' [PROPERTYGROUP] / [INDEXITEMS] / *(PROPERTYGROUP 1*(',' INDEXITEMS) ']' [QUANTITY]
-PROPERTIES    = PROPERTY *(',' PROPERTY)
-INDEXITEMS    = INDEXITEM *(',' INDEXITEM)
-PROPERTY      = 1*(ALPHA / DIGIT) [MARKER] [ARRAYGROUP / PROPERTYGROUP] [OPTIONAL]
-INDEXITEM     = DIGIT [MARKER] [ARRAYGROUP / PROPERTYGROUP] [OPTIONAL]
-QUANTITY      = DIGIT / (MIN ':') / (':' MAX) / (MIN ':' MAX)
-MARKER        = ('$' / '>') *(ALPHA / DIGIT)
-OPTIONAL      = '?'
-MIN           = DIGIT
-MAX           = DIGIT
-```
-...simple right?
-
 
 ##How about an example...
 You can make expressions like this:
@@ -249,6 +232,24 @@ console.log(px.fields());
 # Installation
 
     $ npm install propex
+
+# Technical definition
+```
+PROPERTYGROUP / ARRAYGROUP
+PROPERTYGROUP = '{' *PROPERTIES '}'
+ARRAYGROUP    = '[' [PROPERTYGROUP] / [INDEXITEMS] / *(PROPERTYGROUP 1*(',' INDEXITEMS) ']' [QUANTITY]
+PROPERTIES    = PROPERTY *(',' PROPERTY)
+INDEXITEMS    = INDEXITEM *(',' INDEXITEM)
+PROPERTY      = 1*(ALPHA / DIGIT) [MARKER] [ARRAYGROUP / PROPERTYGROUP] [OPTIONAL]
+INDEXITEM     = DIGIT [MARKER] [ARRAYGROUP / PROPERTYGROUP] [OPTIONAL]
+QUANTITY      = DIGIT / (MIN ':') / (':' MAX) / (MIN ':' MAX)
+MARKER        = ('$' / '>') *(ALPHA / DIGIT)
+OPTIONAL      = '?'
+MIN           = DIGIT
+MAX           = DIGIT
+```
+...simple right?
+
 
 ## License
 
