@@ -33,7 +33,7 @@ console.log(px.copy(users));
 
 ## What is this for?
 - [Deep Copying Objects](#lets-be-picky-very-picky)
-- [Validating JSON objects](https://github.com/williamkapke/propex-validation)
+- [Validating JSON objects](https://github.com/williamkapke/allow)
 - Specifing batch objects that retrieved from web services.
 - Specifing columns returned from a database- and even that sub tables to be joined and merged
 
