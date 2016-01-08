@@ -1,6 +1,6 @@
 {
   "name": "propex",
-  "version": "6.0.3",
+  "version": "6.0.4",
   "description": "Describe objects with Property Expressions!",
   "keywords": [
     "propex",
@@ -20,7 +20,7 @@
   },
   "devDependencies": {
     "mocha": "^2.0.1",
-    "should": "^4.2.1"
+    "should": "^8.0.2"
   },
   "main": "propex",
   "engines": {

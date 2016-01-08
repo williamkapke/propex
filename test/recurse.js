@@ -25,14 +25,6 @@ describe("Recurse/Copy", function() {
       {y:5}
     ]);
   });
-  it("should rename properties",function() {
-    Px("{a>w}").copy(data).should.eql({
-      w:{x:1,xx:2}
-    });
-    Px("{a$w}").copy(data).should.eql({
-      w:{x:1,xx:2}
-    });
-  });
   it("should slice arrays using the min/max values",function() {
     Px("[]:1").copy(data.b).should.eql([{ y: 1, yy: 2 }]);
     Px("[]1:2").copy(data.b).should.eql([{ y: 3, yy: 4, yyy: 0 }]);
@@ -51,6 +43,39 @@ describe("Recurse/Copy", function() {
       {y:3,yyy:0},
       {y:5,yyy:undefined}
     ]);
+  });
+
+  it("should rename properties",function() {
+    Px("{a>t}").copy(data).should.eql({
+      t:{x:1,xx:2}
+    });
+    Px("{a$t}").copy(data).should.eql({
+      t:{x:1,xx:2}
+    });
+  });
+
+  describe('w/ modifiers', function () {
+    var px = Px("{a>w}");
+    px.copy.handlers[''] = function(property, name, value, target) {
+      target.kickazz = value;
+    };
+
+    it("should allow a catchall",function() {
+      px.copy(data).should.eql({
+        kickazz:{x:1,xx:2}
+      });
+    });
+
+    it("should override instance handlers with the handler argument",function() {
+      var h = {
+        '': function(property, name, value, target) {
+          target.bark = value;
+        }
+      };
+      px.copy(data, h).should.eql({
+        bark:{x:1,xx:2}
+      });
+    });
   });
 
 });

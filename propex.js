@@ -6,12 +6,7 @@ var MAX_SAFE_INTEGER = Math.pow(2, 53) - 1;
 
 function Propex(value) {
   value = (!exists(value) || value==="")? "{}" : value.toString();
-
-  var ret = cache[value];
-  if(ret) return ret;
-
-  cache[value] = ret = new reader(value);
-  return ret;
+  return cache[value] || new reader(value);
 }
 Propex.prototype = {
   toString: function(){
@@ -21,12 +16,15 @@ Propex.prototype = {
     var isArray = Array.isArray(source);
     if (this.isArray && !isArray) throw new Error("Expected source to be an Array");
     if (isArray && !this.isArray) throw new Error("Expected source to be an Object");
+    modifiers = modifiers || {};
+    var handlers = this.copy.handlers || {};
+    var catchall = (modifiers['']) || (handlers['']) || rename;
 
     function assign(key, value, target, property){
       if(!exists(property.marker))
         return target[key] = value;
 
-      var modifier = (modifiers && modifiers[property.marker]) || rename;
+      var modifier = (modifiers[property.marker]) || (handlers[property.marker]) || catchall;
       modifier(property, key, value, target);
     }
     function copy(property, key) {
@@ -98,6 +96,10 @@ function propex(properties, isArray, min, max, source){
   this.isArray = isArray;
   this.length = properties.length;
   this.source = source;
+  Object.defineProperty(this, 'copy', { value: function (obj, handlers) {
+    return Propex.prototype.copy.call(this, obj, handlers);
+  }});
+  this.copy.handlers = {};
 
   if (properties) {
     properties.forEach(function(target){
@@ -241,3 +243,7 @@ function ParseError(ctx, message){
 ParseError.prototype = Error.prototype;
 
 module.exports = Propex;
+Object.defineProperty(module.exports, 'cached', { get: function () {
+  return Object.keys(cache);
+} });
+

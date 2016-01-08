@@ -1,5 +1,6 @@
 var should = require("should");
 var Px = require("../");
+var assert = require('assert');
 
 describe("Propex",function() {
   var default_ast = {
@@ -27,8 +28,8 @@ describe("Propex",function() {
 
   describe("Root object",function() {
     it("should default to '{}'",function() {
-      Px().should.eql(default_ast);
-      Px("").should.eql(default_ast);
+      assert.deepEqual(Px(), default_ast);
+      assert.deepEqual(Px(""), default_ast);
     });
     it("must be a string",function() {
       (function() { Px(123); }).should.throw("Pattern must start with '{' or '['");
@@ -45,12 +46,12 @@ describe("Propex",function() {
   describe("Objects",function() {
     it("should accept an empty object",function() {
       var px = Px("{}");
-      px.should.eql(default_ast);
+      assert.deepEqual(px, default_ast);
     });
     it("should accept an object with a property",function() {
       var px = Px("{one}");
       px.should.be.instanceOf(Px);
-      px.should.eql({
+      assert.deepEqual(px, {
         "items":{
           "one":{"name":"one","isOptional":false}
         },
@@ -63,7 +64,7 @@ describe("Propex",function() {
     });
     it("should accept an object with a optional property",function() {
       var px = Px("{one?}");
-      px.should.eql({
+      assert.deepEqual(px, {
         "items":{
           "one":{"name":"one","isOptional":true}
         },
@@ -77,7 +78,7 @@ describe("Propex",function() {
     it("should accept an object with multiple properties",function() {
       var px = Px("{one,two>2?,three}");
       px.should.be.instanceOf(Px);
-      px.should.eql({
+      assert.deepEqual(px, {
         "items":{
           "one":{"name":"one","isOptional":false},
           "two":{"name":"two","marker":"2","isOptional":true},
@@ -100,7 +101,7 @@ describe("Propex",function() {
   describe("Arrays",function() {
     it("should accept an empty array",function() {
       var px = Px("[]");
-      px.should.eql({
+      assert.deepEqual(px, {
         items: { '-1': { name: '-1', isOptional: false } },
         isArray: true,
         length: 1,
@@ -109,7 +110,7 @@ describe("Propex",function() {
     });
     it("should parse a default definition",function() {
       var px = Px("[{one}]");
-      px.should.eql({
+      assert.deepEqual(px, {
         isArray: true,
         items: {
           '-1': {
@@ -133,7 +134,7 @@ describe("Propex",function() {
     });
     it("should parse a specific index definition",function() {
       var px = Px("[3{one}]");
-      px.should.eql({
+      assert.deepEqual(px, {
         isArray: true,
         items: {
           '3': {
@@ -161,7 +162,7 @@ describe("Propex",function() {
       error("[{one},{one}]", "Number expected", 6, ',');
 
       var px = Px("[{x},9]");
-      px.should.eql({
+      assert.deepEqual(px, {
         isArray: true,
         items: {
           '-1': {
@@ -183,14 +184,16 @@ describe("Propex",function() {
       });
     });
     it("should allow a min without a max",function() {
-      Px("[]3").should.eql({
+      var px1 = Px("[]3");
+      assert.deepEqual(px1, {
         isArray: true,
         items: { '-1': { isOptional: false, name: '-1' } },
         length: 1,
         min: 3,
         source: '[]3'
       });
-      Px("[]3:").should.eql({
+      var px2 = Px("[]3:");
+      assert.deepEqual(px2, {
         isArray: true,
         items: { '-1': { isOptional: false, name: '-1' } },
         length: 1,
@@ -200,7 +203,7 @@ describe("Propex",function() {
     });
     it("should allow a min with a max",function() {
       var px = Px("[]3:5");
-      px.should.eql({
+      assert.deepEqual(px, {
         isArray: true,
         items: { '-1': { isOptional: false, name: '-1' } },
         length: 1,
@@ -211,7 +214,7 @@ describe("Propex",function() {
     });
     it("should allow a max without a min",function() {
       var px = Px("[]:5");
-      px.should.eql({
+      assert.deepEqual(px, {
         isArray: true,
         items: { '-1': { isOptional: false, name: '-1' } },
         length: 1,
@@ -226,55 +229,55 @@ describe("Propex",function() {
   describe("Meta Markers",function() {
     it("should parse a property with an unspecified '>' meta marker",function() {
       var px = Px("{one>}");
-      px.should.eql({
-          "items":{
-            "one":{"name":"one","marker": "one","isOptional":false}
-          },
-          "min":1,
-          "max":1,
-          "isArray":false,
-          "length":1,
-          "source":"{one>}"}
-      );
+      assert.deepEqual(px, {
+        "items":{
+          "one":{"name":"one","marker": "one","isOptional":false}
+        },
+        "min":1,
+        "max":1,
+        "isArray":false,
+        "length":1,
+        "source":"{one>}"
+      });
     });
     it("should parse a property with a specified '>' meta marker",function() {
       var px = Px("{one>1}");
-      px.should.eql({
-          "items":{
-            "one":{"name":"one","marker": "1","isOptional":false}
-          },
-          "min":1,
-          "max":1,
-          "isArray":false,
-          "length":1,
-          "source":"{one>1}"}
-      );
+      assert.deepEqual(px, {
+        "items":{
+          "one":{"name":"one","marker": "1","isOptional":false}
+        },
+        "min":1,
+        "max":1,
+        "isArray":false,
+        "length":1,
+        "source":"{one>1}"
+      });
     });
     it("should parse a property with an unspecified '$' meta marker",function() {
       var px = Px("{one$}");
-      px.should.eql({
-          "items":{
-            "one":{"name":"one","marker": "one","isOptional":false}
-          },
-          "min":1,
-          "max":1,
-          "isArray":false,
-          "length":1,
-          "source":"{one$}"}
-      );
+      assert.deepEqual(px, {
+        "items":{
+          "one":{"name":"one","marker": "one","isOptional":false}
+        },
+        "min":1,
+        "max":1,
+        "isArray":false,
+        "length":1,
+        "source":"{one$}"
+      });
     });
     it("should parse a property with a specified '$' meta marker",function() {
       var px = Px("{one$1}");
-      px.should.eql({
-          "items":{
-            "one":{"name":"one","marker": "1","isOptional":false}
-          },
-          "min":1,
-          "max":1,
-          "isArray":false,
-          "length":1,
-          "source":"{one$1}"}
-      );
+      assert.deepEqual(px, {
+        "items":{
+          "one":{"name":"one","marker": "1","isOptional":false}
+        },
+        "min":1,
+        "max":1,
+        "isArray":false,
+        "length":1,
+        "source":"{one$1}"
+      });
     });
   });
 });
