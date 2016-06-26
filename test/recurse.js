@@ -76,6 +76,23 @@ describe("Recurse/Copy", function() {
         bark:{x:1,xx:2}
       });
     });
+
+    it("should expose parent object",function() {
+      var h = {
+        do: function(property, name, value, target, parent) {
+          should.exist(parent);
+          should.exist(name);
+          should.exist(value);
+          value.should.eql(1);
+          name.should.eql('x');
+          parent.x.should.eql(1);
+          //intentionally not setting anything on target
+        }
+      };
+      Px('{a{x$do}}').copy(data, h).should.eql({
+        a:{}//nothing should be set
+      });
+    });
   });
 
 });

@@ -20,12 +20,12 @@ Propex.prototype = {
     var handlers = this.copy.handlers || {};
     var catchall = (modifiers['']) || (handlers['']) || rename;
 
-    function assign(key, value, target, property){
+    function assign(key, value, target, property, parent){
       if(!exists(property.marker))
         return target[key] = value;
 
       var modifier = (modifiers[property.marker]) || (handlers[property.marker]) || catchall;
-      modifier(property, key, value, target);
+      modifier(property, key, value, target, parent);
     }
     function copy(property, key) {
       if(typeof key === 'number' && key > this.data.length-1)
@@ -34,7 +34,7 @@ Propex.prototype = {
       var item = this.data[key];
       if(typeof item === 'undefined'){
         if(!property.isOptional)
-          assign(key, undefined, this.result, property);
+          assign(key, undefined, this.result, property, this.data);
         return;
       }
 
@@ -44,7 +44,7 @@ Propex.prototype = {
         if(subs.isArray && (exists(subs.min) || exists(subs.max)))
           item = item.slice(subs.min || 0, subs.max);
       }
-      assign(key, item, this.result, property);
+      assign(key, item, this.result, property, this.data);
     }
     var result = this.recurse(copy, {data:source, result:isArray?[]:{}}).result;
 
