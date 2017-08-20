@@ -84,7 +84,7 @@ Propex.prototype = {
         else out[parent + k] = 1;
       });
     }
-    iterate('', px);
+    iterate('', this);
 
     return out;
   }
