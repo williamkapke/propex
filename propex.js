@@ -69,10 +69,23 @@ Propex.prototype = {
   },
   fields: function() {
     var out = {};
-    var items = this.items;
-    Object.keys(items).forEach(function(k) {
-      out[k] = items[k].subproperties? items[k].subproperties.fields() : 1;
-    });
+
+    function iterate(parent, px) {
+      var items = px.items;
+
+      if (px.isArray) {
+        if (!items[-1]) return;
+        items = items[-1].subproperties.items
+      }
+
+      Object.keys(items).forEach(function(k) {
+        if (items[k].subproperties)
+          iterate(parent + k + '.', items[k].subproperties);
+        else out[parent + k] = 1;
+      });
+    }
+    iterate('', px);
+
     return out;
   }
 };
